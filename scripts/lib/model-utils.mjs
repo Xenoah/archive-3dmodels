@@ -272,15 +272,16 @@ export async function collectModels(report, options = {}) {
     const photos = await findPhotos(dir);
     const sources = await findSources(dir);
     const download = await findDownload(slug);
+    const hasStlPreview = sources.some((source) => path.extname(source).toLowerCase() === ".stl");
 
     if (!cover) report.warnings.push({ code: "missing-cover", slug, message: `${slug}: cover image is missing.` });
-    if (!preview) report.warnings.push({ code: "missing-glb", slug, message: `${slug}: model.glb is missing.` });
+    if (!preview && !hasStlPreview) report.warnings.push({ code: "missing-preview", slug, message: `${slug}: preview model is missing.` });
     if (photos.length === 0) report.warnings.push({ code: "empty-photos", slug, message: `${slug}: photos are empty.` });
     if (sources.length === 0) report.warnings.push({ code: "empty-source", slug, message: `${slug}: source is empty.` });
     if (status === "draft") report.warnings.push({ code: "draft", slug, message: `${slug}: status is draft.` });
 
     if (copyAssets && status !== "draft") {
-      await copyPublicAssets(slug, { cover, preview, photos });
+      await copyPublicAssets(slug, { cover, preview, photos, sources });
     }
 
     if (includeDrafts || status !== "draft") {
@@ -303,7 +304,7 @@ export async function collectModels(report, options = {}) {
         bodyHtml: renderMarkdown(body),
         bodyText: body.replace(/\s+/g, " ").trim(),
         aliases: Array.isArray(data.aliases) ? data.aliases : [],
-        assets: makeAssets(slug, { cover, preview, photos, download }),
+        assets: makeAssets(slug, { cover, preview, photos, sources, download }),
         sourceCount: sources.length,
         extra
       });
@@ -373,10 +374,18 @@ async function findDownload(slug) {
 function makeAssets(slug, assets) {
   const base = siteBase();
   const url = (file) => (file ? `${base}/${slug}/${path.basename(file)}` : null);
+  const sourceUrl = (file) => `${base}/${slug}/source/${path.basename(file)}`;
+  const sourceAssets = assets.sources.map((source) => ({
+    name: path.basename(source),
+    ext: path.extname(source).toLowerCase(),
+    url: sourceUrl(source)
+  }));
   return {
     cover: url(assets.cover),
     preview: url(assets.preview),
     photos: assets.photos.map((photo) => `${base}/${slug}/photos/${path.basename(photo)}`),
+    sources: sourceAssets,
+    stlPreview: sourceAssets.find((source) => source.ext === ".stl")?.url ?? null,
     download: assets.download ? `${base}/${slug}/downloads/${path.basename(assets.download)}` : null
   };
 }
@@ -394,10 +403,14 @@ async function copyPublicAssets(slug, assets) {
   const targetDir = path.join(PUBLIC_DIR, slug);
   await cleanPublicAssetDir(targetDir);
   await ensureDir(path.join(targetDir, "photos"));
+  await ensureDir(path.join(targetDir, "source"));
   if (assets.cover) await copyFile(assets.cover, path.join(targetDir, path.basename(assets.cover)));
   if (assets.preview) await copyFile(assets.preview, path.join(targetDir, path.basename(assets.preview)));
   for (const photo of assets.photos) {
     await copyFile(photo, path.join(targetDir, "photos", path.basename(photo)));
+  }
+  for (const source of assets.sources) {
+    await copyFile(source, path.join(targetDir, "source", path.basename(source)));
   }
 }
 

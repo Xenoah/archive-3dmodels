@@ -435,17 +435,77 @@ select {
 
 .viewer model-viewer,
 .viewer .cover-image,
-.viewer .no-preview {
+.viewer .no-preview,
+.viewer .stl-viewer {
   width: 100%;
   aspect-ratio: 4 / 3;
 }
 
-.viewer model-viewer {
-  background: var(--surface-soft);
-}
-
 .cover-image {
   object-fit: cover;
+}
+
+.stl-viewer {
+  position: relative;
+  min-height: 360px;
+  background:
+    radial-gradient(circle at 32% 22%, rgba(255, 255, 255, 0.42), transparent 30%),
+    linear-gradient(135deg, rgba(15, 118, 110, 0.14), rgba(183, 121, 31, 0.12)),
+    #dfe3df;
+}
+
+.stl-viewer canvas {
+  width: 100%;
+  height: 100%;
+  min-height: 360px;
+  cursor: grab;
+}
+
+.stl-viewer canvas:active {
+  cursor: grabbing;
+}
+
+.stl-viewer-ui {
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  pointer-events: none;
+}
+
+.stl-viewer-status {
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  border-radius: 6px;
+  background: rgba(31, 36, 32, 0.58);
+  color: white;
+  padding: 8px 10px;
+  font-size: 0.8rem;
+  backdrop-filter: blur(12px);
+}
+
+.stl-viewer-actions {
+  display: flex;
+  gap: 8px;
+  pointer-events: auto;
+}
+
+.stl-viewer-actions button {
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.78);
+  color: var(--text);
+  min-height: 34px;
+  padding: 0 10px;
+  cursor: pointer;
+  backdrop-filter: blur(12px);
+}
+
+.stl-viewer-actions button:hover {
+  background: white;
 }
 
 .no-preview {

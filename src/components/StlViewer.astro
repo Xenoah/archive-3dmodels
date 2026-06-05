@@ -1,0 +1,348 @@
+---
+const { src, title = "STL preview" } = Astro.props;
+---
+
+<div class="stl-viewer" data-stl-src={src} data-title={title}>
+  <canvas aria-label={title}></canvas>
+  <div class="stl-viewer-ui">
+    <span class="stl-viewer-status">Loading STL</span>
+    <div class="stl-viewer-actions">
+      <button type="button" data-action="reset">Reset</button>
+      <button type="button" data-action="spin">Spin</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const initialized = new WeakSet();
+
+  class StlViewer {
+    constructor(root) {
+      this.root = root;
+      this.canvas = root.querySelector("canvas");
+      this.status = root.querySelector(".stl-viewer-status");
+      this.gl = this.canvas.getContext("webgl", { antialias: true, alpha: true });
+      this.yaw = -0.72;
+      this.pitch = 0.52;
+      this.zoom = 1;
+      this.spin = true;
+      this.drag = null;
+      this.vertexCount = 0;
+      this.bounds = null;
+      this.lastTime = 0;
+    }
+
+    async start() {
+      if (!this.gl) {
+        this.status.textContent = "WebGL unavailable";
+        return;
+      }
+      this.installEvents();
+      this.createProgram();
+      const response = await fetch(this.root.dataset.stlSrc);
+      if (!response.ok) throw new Error(`Failed to fetch STL: ${response.status}`);
+      const buffer = await response.arrayBuffer();
+      const mesh = parseStl(buffer);
+      this.uploadMesh(normalizeMesh(mesh));
+      this.status.textContent = `${this.vertexCount / 3} triangles`;
+      requestAnimationFrame((time) => this.draw(time));
+    }
+
+    installEvents() {
+      this.root.querySelector('[data-action="reset"]').addEventListener("click", () => {
+        this.yaw = -0.72;
+        this.pitch = 0.52;
+        this.zoom = 1;
+      });
+      this.root.querySelector('[data-action="spin"]').addEventListener("click", () => {
+        this.spin = !this.spin;
+      });
+      this.canvas.addEventListener("pointerdown", (event) => {
+        this.spin = false;
+        this.canvas.setPointerCapture(event.pointerId);
+        this.drag = { x: event.clientX, y: event.clientY, yaw: this.yaw, pitch: this.pitch };
+      });
+      this.canvas.addEventListener("pointermove", (event) => {
+        if (!this.drag) return;
+        this.yaw = this.drag.yaw + (event.clientX - this.drag.x) * 0.01;
+        this.pitch = clamp(this.drag.pitch + (event.clientY - this.drag.y) * 0.01, -1.45, 1.45);
+      });
+      this.canvas.addEventListener("pointerup", () => {
+        this.drag = null;
+      });
+      this.canvas.addEventListener("wheel", (event) => {
+        event.preventDefault();
+        this.zoom = clamp(this.zoom + event.deltaY * 0.001, 0.42, 2.4);
+      }, { passive: false });
+    }
+
+    createProgram() {
+      const gl = this.gl;
+      const vertex = compileShader(gl, gl.VERTEX_SHADER, `
+        attribute vec3 aPosition;
+        attribute vec3 aNormal;
+        uniform mat4 uMatrix;
+        uniform mat3 uNormalMatrix;
+        varying vec3 vNormal;
+        varying vec3 vPosition;
+        void main() {
+          vNormal = normalize(uNormalMatrix * aNormal);
+          vPosition = aPosition;
+          gl_Position = uMatrix * vec4(aPosition, 1.0);
+        }
+      `);
+      const fragment = compileShader(gl, gl.FRAGMENT_SHADER, `
+        precision mediump float;
+        varying vec3 vNormal;
+        varying vec3 vPosition;
+        void main() {
+          vec3 light = normalize(vec3(0.45, 0.72, 0.54));
+          float diffuse = max(dot(normalize(vNormal), light), 0.0);
+          float rim = pow(1.0 - max(dot(normalize(vNormal), vec3(0.0, 0.0, 1.0)), 0.0), 2.0);
+          vec3 base = mix(vec3(0.22, 0.54, 0.50), vec3(0.58, 0.27, 0.52), clamp(vPosition.x * 0.42 + 0.5, 0.0, 1.0));
+          vec3 color = base * (0.34 + diffuse * 0.72) + rim * vec3(0.22, 0.95, 0.84);
+          gl_FragColor = vec4(color, 1.0);
+        }
+      `);
+      this.program = gl.createProgram();
+      gl.attachShader(this.program, vertex);
+      gl.attachShader(this.program, fragment);
+      gl.linkProgram(this.program);
+      if (!gl.getProgramParameter(this.program, gl.LINK_STATUS)) {
+        throw new Error(gl.getProgramInfoLog(this.program));
+      }
+      this.locations = {
+        position: gl.getAttribLocation(this.program, "aPosition"),
+        normal: gl.getAttribLocation(this.program, "aNormal"),
+        matrix: gl.getUniformLocation(this.program, "uMatrix"),
+        normalMatrix: gl.getUniformLocation(this.program, "uNormalMatrix")
+      };
+    }
+
+    uploadMesh(mesh) {
+      const gl = this.gl;
+      this.vertexCount = mesh.positions.length / 3;
+      this.positionBuffer = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, this.positionBuffer);
+      gl.bufferData(gl.ARRAY_BUFFER, mesh.positions, gl.STATIC_DRAW);
+      this.normalBuffer = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, this.normalBuffer);
+      gl.bufferData(gl.ARRAY_BUFFER, mesh.normals, gl.STATIC_DRAW);
+    }
+
+    draw(time) {
+      const gl = this.gl;
+      const rect = this.canvas.getBoundingClientRect();
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const width = Math.max(1, Math.floor(rect.width * dpr));
+      const height = Math.max(1, Math.floor(rect.height * dpr));
+      if (this.canvas.width !== width || this.canvas.height !== height) {
+        this.canvas.width = width;
+        this.canvas.height = height;
+      }
+      if (this.spin && this.lastTime) this.yaw += (time - this.lastTime) * 0.00035;
+      this.lastTime = time;
+
+      gl.viewport(0, 0, width, height);
+      gl.clearColor(0, 0, 0, 0);
+      gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+      gl.enable(gl.DEPTH_TEST);
+      gl.enable(gl.CULL_FACE);
+      gl.useProgram(this.program);
+
+      const aspect = width / height;
+      const projection = perspective(42 * Math.PI / 180, aspect, 0.01, 100);
+      const view = multiply(translate(0, 0, -4.2 * this.zoom), multiply(rotateX(this.pitch), rotateY(this.yaw)));
+      const matrix = multiply(projection, view);
+      const normalMatrix = normalFromMat4(view);
+
+      gl.uniformMatrix4fv(this.locations.matrix, false, matrix);
+      gl.uniformMatrix3fv(this.locations.normalMatrix, false, normalMatrix);
+
+      gl.bindBuffer(gl.ARRAY_BUFFER, this.positionBuffer);
+      gl.enableVertexAttribArray(this.locations.position);
+      gl.vertexAttribPointer(this.locations.position, 3, gl.FLOAT, false, 0, 0);
+      gl.bindBuffer(gl.ARRAY_BUFFER, this.normalBuffer);
+      gl.enableVertexAttribArray(this.locations.normal);
+      gl.vertexAttribPointer(this.locations.normal, 3, gl.FLOAT, false, 0, 0);
+      gl.drawArrays(gl.TRIANGLES, 0, this.vertexCount);
+      requestAnimationFrame((nextTime) => this.draw(nextTime));
+    }
+  }
+
+  function initStlViewers() {
+    document.querySelectorAll(".stl-viewer").forEach((root) => {
+      if (initialized.has(root)) return;
+      initialized.add(root);
+      new StlViewer(root).start().catch((error) => {
+        root.querySelector(".stl-viewer-status").textContent = "Preview failed";
+        console.error(error);
+      });
+    });
+  }
+
+  function parseStl(buffer) {
+    const view = new DataView(buffer);
+    const decoder = new TextDecoder();
+    const header = decoder.decode(buffer.slice(0, Math.min(80, buffer.byteLength))).trim();
+    const count = buffer.byteLength >= 84 ? view.getUint32(80, true) : 0;
+    if (buffer.byteLength === 84 + count * 50) return parseBinaryStl(view, count);
+    if (header.startsWith("solid")) return parseAsciiStl(decoder.decode(buffer));
+    return parseBinaryStl(view, count);
+  }
+
+  function parseBinaryStl(view, count) {
+    const positions = new Float32Array(count * 9);
+    const normals = new Float32Array(count * 9);
+    let offset = 84;
+    for (let i = 0; i < count; i += 1) {
+      const normal = [view.getFloat32(offset, true), view.getFloat32(offset + 4, true), view.getFloat32(offset + 8, true)];
+      offset += 12;
+      for (let v = 0; v < 3; v += 1) {
+        const base = i * 9 + v * 3;
+        positions[base] = view.getFloat32(offset, true);
+        positions[base + 1] = view.getFloat32(offset + 4, true);
+        positions[base + 2] = view.getFloat32(offset + 8, true);
+        normals[base] = normal[0];
+        normals[base + 1] = normal[1];
+        normals[base + 2] = normal[2];
+        offset += 12;
+      }
+      offset += 2;
+    }
+    return { positions, normals };
+  }
+
+  function parseAsciiStl(text) {
+    const vertices = [...text.matchAll(/vertex\s+([-+0-9.eE]+)\s+([-+0-9.eE]+)\s+([-+0-9.eE]+)/g)]
+      .map((match) => [Number(match[1]), Number(match[2]), Number(match[3])]);
+    const positions = new Float32Array(vertices.length * 3);
+    const normals = new Float32Array(vertices.length * 3);
+    for (let i = 0; i < vertices.length; i += 1) positions.set(vertices[i], i * 3);
+    for (let i = 0; i < vertices.length; i += 3) {
+      const n = faceNormal(vertices[i], vertices[i + 1], vertices[i + 2]);
+      normals.set(n, i * 3);
+      normals.set(n, i * 3 + 3);
+      normals.set(n, i * 3 + 6);
+    }
+    return { positions, normals };
+  }
+
+  function normalizeMesh(mesh) {
+    const positions = mesh.positions;
+    const normals = mesh.normals;
+    const min = [Infinity, Infinity, Infinity];
+    const max = [-Infinity, -Infinity, -Infinity];
+    for (let i = 0; i < positions.length; i += 3) {
+      min[0] = Math.min(min[0], positions[i]);
+      min[1] = Math.min(min[1], positions[i + 1]);
+      min[2] = Math.min(min[2], positions[i + 2]);
+      max[0] = Math.max(max[0], positions[i]);
+      max[1] = Math.max(max[1], positions[i + 1]);
+      max[2] = Math.max(max[2], positions[i + 2]);
+    }
+    const center = [(min[0] + max[0]) / 2, (min[1] + max[1]) / 2, (min[2] + max[2]) / 2];
+    const scale = 2.15 / Math.max(max[0] - min[0], max[1] - min[1], max[2] - min[2], 1);
+    for (let i = 0; i < positions.length; i += 3) {
+      positions[i] = (positions[i] - center[0]) * scale;
+      positions[i + 1] = (positions[i + 1] - center[1]) * scale;
+      positions[i + 2] = (positions[i + 2] - center[2]) * scale;
+    }
+    for (let i = 0; i < normals.length; i += 9) {
+      if (Math.abs(normals[i]) + Math.abs(normals[i + 1]) + Math.abs(normals[i + 2]) > 0.00001) continue;
+      const n = faceNormal(
+        [positions[i], positions[i + 1], positions[i + 2]],
+        [positions[i + 3], positions[i + 4], positions[i + 5]],
+        [positions[i + 6], positions[i + 7], positions[i + 8]]
+      );
+      normals.set(n, i);
+      normals.set(n, i + 3);
+      normals.set(n, i + 6);
+    }
+    return mesh;
+  }
+
+  function faceNormal(a, b, c) {
+    const ux = b[0] - a[0], uy = b[1] - a[1], uz = b[2] - a[2];
+    const vx = c[0] - a[0], vy = c[1] - a[1], vz = c[2] - a[2];
+    const n = [uy * vz - uz * vy, uz * vx - ux * vz, ux * vy - uy * vx];
+    const len = Math.hypot(n[0], n[1], n[2]) || 1;
+    return [n[0] / len, n[1] / len, n[2] / len];
+  }
+
+  function compileShader(gl, type, source) {
+    const shader = gl.createShader(type);
+    gl.shaderSource(shader, source);
+    gl.compileShader(shader);
+    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(shader));
+    return shader;
+  }
+
+  function perspective(fov, aspect, near, far) {
+    const f = 1 / Math.tan(fov / 2);
+    const nf = 1 / (near - far);
+    return new Float32Array([
+      f / aspect, 0, 0, 0,
+      0, f, 0, 0,
+      0, 0, (far + near) * nf, -1,
+      0, 0, 2 * far * near * nf, 0
+    ]);
+  }
+
+  function translate(x, y, z) {
+    return new Float32Array([
+      1, 0, 0, 0,
+      0, 1, 0, 0,
+      0, 0, 1, 0,
+      x, y, z, 1
+    ]);
+  }
+
+  function rotateX(rad) {
+    const c = Math.cos(rad), s = Math.sin(rad);
+    return new Float32Array([
+      1, 0, 0, 0,
+      0, c, s, 0,
+      0, -s, c, 0,
+      0, 0, 0, 1
+    ]);
+  }
+
+  function rotateY(rad) {
+    const c = Math.cos(rad), s = Math.sin(rad);
+    return new Float32Array([
+      c, 0, -s, 0,
+      0, 1, 0, 0,
+      s, 0, c, 0,
+      0, 0, 0, 1
+    ]);
+  }
+
+  function multiply(a, b) {
+    const out = new Float32Array(16);
+    for (let row = 0; row < 4; row += 1) {
+      for (let col = 0; col < 4; col += 1) {
+        out[col * 4 + row] =
+          a[0 * 4 + row] * b[col * 4 + 0] +
+          a[1 * 4 + row] * b[col * 4 + 1] +
+          a[2 * 4 + row] * b[col * 4 + 2] +
+          a[3 * 4 + row] * b[col * 4 + 3];
+      }
+    }
+    return out;
+  }
+
+  function normalFromMat4(m) {
+    return new Float32Array([
+      m[0], m[1], m[2],
+      m[4], m[5], m[6],
+      m[8], m[9], m[10]
+    ]);
+  }
+
+  function clamp(value, min, max) {
+    return Math.min(max, Math.max(min, value));
+  }
+
+  initStlViewers();
+</script>

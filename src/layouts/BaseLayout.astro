@@ -26,7 +26,7 @@ const imageUrl = image ? new URL(image, Astro.site).href : "";
     <link rel="alternate" type="application/rss+xml" title="3D Models RSS" href={`${base}/rss.xml`} />
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self' 'unsafe-inline' https://unpkg.com; style-src 'self' 'unsafe-inline'; img-src 'self' data:; model-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'none';"
+      content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'none';"
     />
     <title>{title}</title>
   </head>

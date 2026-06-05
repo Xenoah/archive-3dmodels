@@ -1,5 +1,6 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
+import StlViewer from "../components/StlViewer.astro";
 import models from "../data/models.generated.json";
 
 export function getStaticPaths() {
@@ -29,24 +30,13 @@ const relatedModels = models
   description={model.summary || `${model.title} download page`}
   image={model.assets.cover || ""}
 >
-  {model.assets.preview && (
-    <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
-  )}
-
   <a class="ghost-button" href={`${base}/`}>Back to models</a>
 
   <section class="detail-hero">
     <div class="viewer">
       {
-        model.assets.preview ? (
-          <model-viewer
-            src={model.assets.preview}
-            camera-controls
-            auto-rotate
-            ar={false}
-            shadow-intensity="0.65"
-            alt={`${model.title} 3D preview`}
-          />
+        model.assets.stlPreview ? (
+          <StlViewer src={model.assets.stlPreview} title={`${model.title} STL preview`} />
         ) : model.assets.cover ? (
           <img class="cover-image" src={model.assets.cover} alt="" />
         ) : (
@@ -130,6 +120,16 @@ const relatedModels = models
       <dd>{model.scale || "unspecified"}</dd>
       <dt>Source files</dt>
       <dd>{model.sourceCount}</dd>
+      {model.assets.sources?.length > 0 && (
+        <>
+          <dt>Source list</dt>
+          <dd>
+            {model.assets.sources.map((source) => (
+              <a href={source.url}>{source.name}</a>
+            ))}
+          </dd>
+        </>
+      )}
     </dl>
   </section>
 

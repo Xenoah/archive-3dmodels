@@ -42,3 +42,6 @@
 - Phase 6 完了コメント: `sitemap.xml` と `rss.xml` を静的生成する endpoint を追加。`https://xenoah.github.io/archive-3dmodels/` 配下の URL を出力する。
 - Phase 6 完了コメント: Front Matter の `aliases` から旧URLリダイレクトページを生成する catch-all route を追加し、一覧検索は本文テキストも対象にした。
 - Phase 6 検証: `npm.cmd run build` 成功、`dist/sitemap.xml` と `dist/rss.xml` のURL確認済み。
+- STL preview update: 外部の model-viewer / Three.js に頼らず、`src/components/StlViewer.astro` で自前 WebGL STL プレビューを実装した。binary/ascii STL を fetch して直接 parse し、ドラッグ回転・ホイールズーム・Reset/Spin を提供する。
+- STL preview update: `source/*.stl` を `public/{slug}/source/` にコピーし、manifest の `assets.stlPreview` から詳細ページが表示する。CSP から `unpkg.com` を外し、通信先は self のみに戻した。
+- STL preview update: STL があるモデルでは `model.glb` 不在を警告しないようにした。GLB なしでも自前 STL preview が主経路になる。
