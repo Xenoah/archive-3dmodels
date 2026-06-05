@@ -241,7 +241,7 @@ select {
 
 .toolbar {
   display: grid;
-  grid-template-columns: 1fr repeat(3, minmax(150px, 190px));
+  grid-template-columns: minmax(220px, 1fr) repeat(4, minmax(140px, 180px));
   gap: 10px;
   align-items: center;
   padding: 14px;
@@ -519,6 +519,36 @@ select {
   background: var(--surface);
 }
 
+.related-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.related-card {
+  display: grid;
+  gap: 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.82);
+  padding: 14px;
+  text-decoration: none;
+}
+
+.related-card:hover {
+  border-color: var(--accent);
+  box-shadow: var(--shadow);
+}
+
+.related-card span,
+.related-card small {
+  color: var(--muted);
+}
+
+.related-card strong {
+  font-size: 1rem;
+}
+
 .markdown {
   line-height: 1.8;
   max-width: 800px;
@@ -573,6 +603,10 @@ select {
   .gallery {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
+
+  .related-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 640px) {
@@ -590,5 +624,9 @@ select {
 
   .gallery {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .related-grid {
+    grid-template-columns: 1fr;
   }
 }

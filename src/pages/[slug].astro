@@ -10,8 +10,18 @@ export function getStaticPaths() {
 
 const { model } = Astro.props;
 const base = import.meta.env.BASE_URL.replace(/\/$/, "");
-const credit = model.credit_required === true ? "必要" : model.credit_required === false ? "不要" : "要確認";
-const boolLabel = (value) => (value === true ? "可" : value === false ? "不可" : "要確認");
+const credit = model.credit_required === true ? "Required" : model.credit_required === false ? "Not required" : "Check notes";
+const boolLabel = (value) => (value === true ? "Allowed" : value === false ? "Not allowed" : "Check notes");
+const relatedModels = models
+  .filter((item) => item.status === "public" && item.slug !== model.slug)
+  .map((item) => {
+    const sharedTags = (item.tags ?? []).filter((tag) => (model.tags ?? []).includes(tag)).length;
+    const categoryScore = item.category === model.category ? 1 : 0;
+    return { ...item, relatedScore: sharedTags * 2 + categoryScore };
+  })
+  .filter((item) => item.relatedScore > 0)
+  .sort((a, b) => b.relatedScore - a.relatedScore || a.title.localeCompare(b.title))
+  .slice(0, 3);
 ---
 
 <BaseLayout title={`${model.title} | 3D Models`} description={model.summary || `${model.title} download page`}>
@@ -71,9 +81,6 @@ const boolLabel = (value) => (value === true ? "可" : value === false ? "不可
 
       <section class="download-box" aria-labelledby="download-title">
         <h2 id="download-title">Download</h2>
-        <a class="button" href={model.assets.download || "#"} aria-disabled={model.assets.download ? "false" : "true"}>
-          Download ZIP
-        </a>
         <dl>
           <dt>License</dt>
           <dd>{model.license}</dd>
@@ -122,9 +129,24 @@ const boolLabel = (value) => (value === true ? "可" : value === false ? "不可
     </dl>
   </section>
 
+  {relatedModels.length > 0 && (
+    <section class="section" aria-labelledby="related-title">
+      <h2 id="related-title">Related Models</h2>
+      <div class="related-grid">
+        {relatedModels.map((item) => (
+          <a class="related-card" href={`${base}/${item.slug}/`}>
+            <span>{item.category}</span>
+            <strong>{item.title}</strong>
+            <small>{(item.tags ?? []).slice(0, 3).map((tag) => `#${tag}`).join(" ")}</small>
+          </a>
+        ))}
+      </div>
+    </section>
+  )}
+
   <section class="download-box section" aria-labelledby="download-bottom-title">
     <h2 id="download-bottom-title">Download ZIP</h2>
-    <p class="summary">ライセンス条件と本文の注意事項を確認してからダウンロードしてください。</p>
+    <p class="summary">Check the license conditions and notes before downloading.</p>
     <a class="button" href={model.assets.download || "#"} aria-disabled={model.assets.download ? "false" : "true"}>
       Download ZIP
     </a>

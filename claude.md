@@ -27,3 +27,7 @@
 - Phase 2 完了コメント: `import:inbox` は既存モデル merge 時に写真連番を継続し、source 同名衝突は `-2` 形式で回避するようにした。既存 `model.glb` がある場合は新規 preview を警告して取り込まない。
 - Phase 2 完了コメント: `normalize:model` はトップ階層の画像を `cover`/`photos/photo-###` に整理し、トップ階層の GLB/source を正規位置へ移動し、Markdown 内の単純な相対参照を更新するようにした。
 - Phase 2 検証: `npm.cmd run build` 成功、`npm.cmd run normalize:model test` dry-run 成功。
+- Phase 3 完了コメント: 一覧に並び替え (`Newest first`, `Name A-Z`, `Category`) を追加し、既存の検索/カテゴリ/タグ/ライセンス絞り込みと同時に動くようにした。
+- Phase 3 完了コメント: 詳細ページにタグ/カテゴリ一致で関連モデルを最大3件表示する `Related Models` を追加した。
+- Phase 3 完了コメント: 文字化けしていた `index.astro`, `[slug].astro`, `terms.astro` のUI文言をASCII中心に整理。`terms` も普通のGUIページとして生成される。
+- Phase 3 検証: `npm.cmd run build` 成功。

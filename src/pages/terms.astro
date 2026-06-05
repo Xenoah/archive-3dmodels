@@ -3,21 +3,21 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 const base = import.meta.env.BASE_URL.replace(/\/$/, "");
 ---
 
-<BaseLayout title="Terms | 3D Models" description="3Dモデル配布サイトの利用条件">
+<BaseLayout title="Terms | 3D Models" description="License and download terms for the 3D model archive.">
   <a class="ghost-button" href={`${base}/`}>Back to models</a>
   <section class="intro">
     <div>
       <h1>Terms</h1>
       <p>
-        各モデルのライセンス、商用利用、改変、再配布、クレジット条件はモデル詳細ページを正とします。
-        `Original` の場合は本文の注意事項も確認してください。
+        Each model page is the source of truth for license, commercial use, modification,
+        redistribution, and credit requirements. For Original licenses, read the model notes too.
       </p>
     </div>
   </section>
   <section class="section markdown">
     <h2>Download</h2>
-    <p>zip には source 配下の配布元ファイル、README、LICENSE を含めます。</p>
+    <p>ZIP files include source files plus generated README and LICENSE text.</p>
     <h2>Draft</h2>
-    <p>draft のモデルは一覧、詳細、zip 生成の対象外です。</p>
+    <p>Draft models are excluded from listings, detail pages, and ZIP generation.</p>
   </section>
 </BaseLayout>

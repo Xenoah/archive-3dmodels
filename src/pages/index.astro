@@ -12,14 +12,14 @@ const latest = publicModels.slice(0, 3);
 
 <BaseLayout
   title="3D Models"
-  description="3Dモデルをカテゴリやタグで探して、ライセンス条件を確認してダウンロードできます。"
+  description="Browse downloadable 3D models by category, tag, and license."
 >
   <section class="intro" aria-labelledby="page-title">
     <div>
       <h1 id="page-title">3D Models</h1>
       <p>
-        3Dプリント用データを静的な HTML、CSS、JavaScript だけで軽く閲覧できる配布アーカイブです。
-        Markdown と source ファイルから一覧、詳細、Download ZIP を生成します。
+        A lightweight static archive for downloadable 3D model files. Pages, metadata,
+        galleries, and ZIP downloads are generated from Markdown and source folders.
       </p>
       <div class="hero-actions">
         <a class="button" href="#model-grid">Browse models</a>
@@ -66,13 +66,18 @@ const latest = publicModels.slice(0, 3);
       <option value="">All licenses</option>
       {licenses.map((license) => <option value={license}>{license}</option>)}
     </select>
+    <select id="sort" aria-label="Sort order">
+      <option value="updated-desc">Newest first</option>
+      <option value="title-asc">Name A-Z</option>
+      <option value="category-asc">Category</option>
+    </select>
   </form>
 
   {
     publicModels.length === 0 ? (
       <div class="empty">
         <strong>No public models yet.</strong>
-        <p>content/models にモデルを追加し、Front Matter の status を public にすると表示されます。</p>
+        <p>Add a model under content/models and set status to public in Front Matter.</p>
       </div>
     ) : (
       <section class="model-grid" id="model-grid" aria-label="Model list">
@@ -85,6 +90,7 @@ const latest = publicModels.slice(0, 3);
             data-category={model.category}
             data-tags={(model.tags ?? []).join(" ")}
             data-license={model.license}
+            data-updated={model.updated || ""}
           >
             <div class="thumb">
               {model.assets.cover ? (
@@ -127,7 +133,8 @@ const latest = publicModels.slice(0, 3);
       q: document.querySelector("#q"),
       category: document.querySelector("#category"),
       tag: document.querySelector("#tag"),
-      license: document.querySelector("#license")
+      license: document.querySelector("#license"),
+      sort: document.querySelector("#sort")
     };
 
     function filterCards() {
@@ -135,6 +142,17 @@ const latest = publicModels.slice(0, 3);
       const category = fields.category.value;
       const tag = fields.tag.value;
       const license = fields.license.value;
+      const sort = fields.sort.value;
+      const grid = document.querySelector("#model-grid");
+
+      const sortedCards = [...cards].sort((a, b) => {
+        if (sort === "title-asc") return a.dataset.title.localeCompare(b.dataset.title);
+        if (sort === "category-asc") {
+          return `${a.dataset.category} ${a.dataset.title}`.localeCompare(`${b.dataset.category} ${b.dataset.title}`);
+        }
+        return (b.dataset.updated || "").localeCompare(a.dataset.updated || "") || a.dataset.title.localeCompare(b.dataset.title);
+      });
+      for (const card of sortedCards) grid?.append(card);
 
       for (const card of cards) {
         const haystack = `${card.dataset.title} ${card.dataset.summary} ${card.dataset.tags}`;
