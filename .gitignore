@@ -1,0 +1,16 @@
+node_modules/
+dist/
+.astro/
+
+# Generated during validation/build.
+reports/
+src/data/models.generated.json
+public/*
+!public/.gitkeep
+
+# Local environment files must never be published.
+.env
+.env.*
+*.pem
+*.key
+*.p12

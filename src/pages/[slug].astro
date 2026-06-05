@@ -1,0 +1,114 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import models from "../data/models.generated.json";
+
+export function getStaticPaths() {
+  return models
+    .filter((model) => model.status === "public" || model.status === "hidden")
+    .map((model) => ({ params: { slug: model.slug }, props: { model } }));
+}
+
+const { model } = Astro.props;
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+const credit = model.credit_required === true ? "必要" : model.credit_required === false ? "不要" : "要確認";
+const boolLabel = (value) => (value === true ? "可" : value === false ? "不可" : "要確認");
+---
+
+<BaseLayout title={`${model.title} | 3D Models`} description={model.summary || `${model.title} download page`}>
+  {model.assets.preview && (
+    <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+  )}
+
+  <a class="ghost-button" href={`${base}/`}>Back to models</a>
+
+  <section class="detail-hero">
+    <div class="viewer">
+      {
+        model.assets.preview ? (
+          <model-viewer
+            src={model.assets.preview}
+            camera-controls
+            auto-rotate
+            ar={false}
+            shadow-intensity="0.65"
+            alt={`${model.title} 3D preview`}
+          />
+        ) : model.assets.cover ? (
+          <img class="cover-image" src={model.assets.cover} alt="" />
+        ) : (
+          <div class="no-preview">3D Preview unavailable · Photos only</div>
+        )
+      }
+    </div>
+
+    <div class="detail-panel">
+      <h1>{model.title}</h1>
+      <p class="summary">{model.summary || "No summary provided."}</p>
+      <div class="meta-row">
+        <span class="pill">{model.category}</span>
+        <span class="pill">{model.license}</span>
+        <span class="pill">unit: {model.unit}</span>
+        {model.version && <span class="pill">v{model.version}</span>}
+      </div>
+
+      <section class="download-box" aria-labelledby="download-title">
+        <h2 id="download-title">Download</h2>
+        <a class="button" href={model.assets.download || "#"} aria-disabled={model.assets.download ? "false" : "true"}>
+          Download ZIP
+        </a>
+        <dl>
+          <dt>License</dt>
+          <dd>{model.license}</dd>
+          <dt>Commercial use</dt>
+          <dd>{boolLabel(model.commercial_use)}</dd>
+          <dt>Modification</dt>
+          <dd>{boolLabel(model.modification)}</dd>
+          <dt>Redistribution</dt>
+          <dd>{boolLabel(model.redistribution)}</dd>
+          <dt>Credit</dt>
+          <dd>{credit}</dd>
+        </dl>
+      </section>
+    </div>
+  </section>
+
+  {model.assets.photos.length > 0 && (
+    <section class="section" aria-labelledby="photos-title">
+      <h2 id="photos-title">Photos</h2>
+      <div class="gallery">
+        {model.assets.photos.map((photo) => <img src={photo} alt="" loading="lazy" />)}
+      </div>
+    </section>
+  )}
+
+  <section class="section" aria-labelledby="description-title">
+    <h2 id="description-title">Description</h2>
+    <article class="markdown" set:html={model.bodyHtml} />
+  </section>
+
+  <section class="section" aria-labelledby="spec-title">
+    <h2 id="spec-title">Details</h2>
+    <dl class="spec-list">
+      <dt>Slug</dt>
+      <dd>{model.slug}</dd>
+      <dt>Category</dt>
+      <dd>{model.category}</dd>
+      <dt>Tags</dt>
+      <dd>{(model.tags ?? []).join(", ") || "None"}</dd>
+      <dt>Unit</dt>
+      <dd>{model.unit}</dd>
+      <dt>Scale</dt>
+      <dd>{model.scale || "unspecified"}</dd>
+      <dt>Source files</dt>
+      <dd>{model.sourceCount}</dd>
+    </dl>
+  </section>
+
+  <section class="download-box section" aria-labelledby="download-bottom-title">
+    <h2 id="download-bottom-title">Download ZIP</h2>
+    <p class="summary">ライセンス条件と本文の注意事項を確認してからダウンロードしてください。</p>
+    <a class="button" href={model.assets.download || "#"} aria-disabled={model.assets.download ? "false" : "true"}>
+      Download ZIP
+    </a>
+  </section>
+</BaseLayout>

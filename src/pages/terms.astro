@@ -1,0 +1,23 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+---
+
+<BaseLayout title="Terms | 3D Models" description="3Dモデル配布サイトの利用条件">
+  <a class="ghost-button" href={`${base}/`}>Back to models</a>
+  <section class="intro">
+    <div>
+      <h1>Terms</h1>
+      <p>
+        各モデルのライセンス、商用利用、改変、再配布、クレジット条件はモデル詳細ページを正とします。
+        `Original` の場合は本文の注意事項も確認してください。
+      </p>
+    </div>
+  </section>
+  <section class="section markdown">
+    <h2>Download</h2>
+    <p>zip には source 配下の配布元ファイル、README、LICENSE を含めます。</p>
+    <h2>Draft</h2>
+    <p>draft のモデルは一覧、詳細、zip 生成の対象外です。</p>
+  </section>
+</BaseLayout>

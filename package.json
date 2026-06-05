@@ -1,0 +1,20 @@
+{
+  "name": "archive-3dmodels",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "new:model": "node scripts/new-model.mjs",
+    "import:inbox": "node scripts/import-inbox.mjs",
+    "import:loose": "node scripts/import-loose.mjs",
+    "normalize:model": "node scripts/normalize-model.mjs",
+    "validate": "node scripts/validate-models.mjs",
+    "generate": "node scripts/generate-zip.mjs && node scripts/generate-manifest.mjs",
+    "build": "npm run validate && npm run generate && astro build",
+    "dev": "npm run generate && astro dev",
+    "preview": "astro preview"
+  },
+  "dependencies": {
+    "astro": "^5.9.2"
+  }
+}

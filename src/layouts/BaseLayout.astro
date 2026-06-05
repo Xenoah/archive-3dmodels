@@ -1,0 +1,40 @@
+---
+import "../styles/global.css";
+
+const { title = "3D Models", description = "3D model archive for downloads." } = Astro.props;
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+---
+
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content={description} />
+    <title>{title}</title>
+  </head>
+  <body>
+    <div class="shell">
+      <header class="site-header">
+        <nav class="nav" aria-label="Global">
+          <a class="brand" href={`${base}/`}>
+            <strong>3D Models</strong>
+            <span>Static distribution archive</span>
+          </a>
+          <div class="nav-links">
+            <a href={`${base}/`}>Models</a>
+            <a href={`${base}/terms/`}>Terms</a>
+          </div>
+        </nav>
+      </header>
+      <main class="main">
+        <slot />
+      </main>
+      <footer class="site-footer">
+        <div class="inner">
+          <span>Generated from Markdown, source files, and explicit public status.</span>
+        </div>
+      </footer>
+    </div>
+  </body>
+</html>
