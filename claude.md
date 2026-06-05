@@ -21,3 +21,4 @@
 - NotFound 対策。GitHub Pages のプロジェクトサイト URL は通常 `/archive-3dmodels/` なので、Astro と workflow の `PUBLIC_BASE_PATH` を `/models` から `/archive-3dmodels` に変更した。
 - manifest/asset URL 用の `siteBase()` も `/archive-3dmodels` をデフォルトに変更。これでローカル build でも download URL が `/archive-3dmodels/test/downloads/...` になる。
 - サイトUIは静的 HTML/CSS/JS 出力のまま、ヒーロー、サマリーパネル、カード、軽い hover 表現を追加して、重い画像やフレームワークを増やさずリッチ寄りに調整した。
+- ユーザーから「UIがテキストベース」「ページは普通にGUIでいい」と指摘あり。STLのみで cover/GLB/photos がないと文字中心に見えるため、CSSだけの3D風プレースホルダー、詳細ページの action strip、カードの視覚表現を追加した。

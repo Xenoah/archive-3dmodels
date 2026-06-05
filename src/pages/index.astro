@@ -87,7 +87,18 @@ const latest = publicModels.slice(0, 3);
             data-license={model.license}
           >
             <div class="thumb">
-              {model.assets.cover ? <img src={model.assets.cover} alt="" loading="lazy" /> : <span>No image</span>}
+              {model.assets.cover ? (
+                <img src={model.assets.cover} alt="" loading="lazy" />
+              ) : (
+                <div class="model-fallback" aria-hidden="true">
+                  <div class="cube-mark">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                  </div>
+                  <strong>STL</strong>
+                </div>
+              )}
             </div>
             <div class="card-body">
               <div>

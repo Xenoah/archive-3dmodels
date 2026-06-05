@@ -36,7 +36,16 @@ const boolLabel = (value) => (value === true ? "可" : value === false ? "不可
         ) : model.assets.cover ? (
           <img class="cover-image" src={model.assets.cover} alt="" />
         ) : (
-          <div class="no-preview">3D Preview unavailable · Photos only</div>
+          <div class="no-preview">
+            <div class="model-fallback large" aria-hidden="true">
+              <div class="cube-mark">
+                <span></span>
+                <span></span>
+                <span></span>
+              </div>
+              <strong>STL Source</strong>
+            </div>
+          </div>
         )
       }
     </div>
@@ -50,6 +59,14 @@ const boolLabel = (value) => (value === true ? "可" : value === false ? "不可
         <span class="pill">{model.license}</span>
         <span class="pill">unit: {model.unit}</span>
         {model.version && <span class="pill">v{model.version}</span>}
+      </div>
+
+      <div class="action-strip" aria-label="Model actions">
+        <a class="button" href={model.assets.download || "#"} aria-disabled={model.assets.download ? "false" : "true"}>
+          Download ZIP
+        </a>
+        <a class="ghost-button" href="#details">Details</a>
+        <a class="ghost-button" href="#description-title">Description</a>
       </div>
 
       <section class="download-box" aria-labelledby="download-title">
@@ -87,7 +104,7 @@ const boolLabel = (value) => (value === true ? "可" : value === false ? "不可
     <article class="markdown" set:html={model.bodyHtml} />
   </section>
 
-  <section class="section" aria-labelledby="spec-title">
+  <section class="section" id="details" aria-labelledby="spec-title">
     <h2 id="spec-title">Details</h2>
     <dl class="spec-list">
       <dt>Slug</dt>
