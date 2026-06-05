@@ -35,3 +35,6 @@
 - Phase 4 完了コメント: BaseLayout に CSP meta を追加し、Dependabot と Dependency Review workflow を追加した。
 - Phase 4 完了コメント: 依存追加なしで JPEG APP1(EXIF/XMP) を dry-run/apply で除去できる `npm run optimize:images` を追加した。
 - Phase 4 検証: `npm.cmd run build` 成功、`npm.cmd run optimize:images` dry-run 成功。
+- Phase 5 完了コメント: `_inbox/{slug}` をまとめて処理する `npm run import:all-inbox` を追加。dry-run と `--apply`、任意の `--merge` に対応した。
+- Phase 5 完了コメント: `_inbox/**` push または手動実行で import dry-run/apply/validate を行い、結果を `peter-evans/create-pull-request` で PR 化する `Import Inbox` workflow を追加した。main へ直接自動コミットしない。
+- Phase 5 検証: `_inbox` 空状態で `npm.cmd run import:all-inbox` 成功、`npm.cmd run build` 成功。
