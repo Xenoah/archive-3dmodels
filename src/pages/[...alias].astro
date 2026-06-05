@@ -1,0 +1,29 @@
+---
+import models from "../data/models.generated.json";
+
+export function getStaticPaths() {
+  return models.flatMap((model) =>
+    (model.aliases ?? []).map((alias) => ({
+      params: { alias },
+      props: { model }
+    }))
+  );
+}
+
+const { model } = Astro.props;
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+const target = `${base}/${model.slug}/`;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="refresh" content={`0; url=${target}`} />
+    <link rel="canonical" href={target} />
+    <title>Redirecting to {model.title}</title>
+  </head>
+  <body>
+    <p><a href={target}>Redirecting to {model.title}</a></p>
+  </body>
+</html>

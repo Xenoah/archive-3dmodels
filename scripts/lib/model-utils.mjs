@@ -301,6 +301,8 @@ export async function collectModels(report, options = {}) {
         modification: data.modification,
         credit_required: data.credit_required,
         bodyHtml: renderMarkdown(body),
+        bodyText: body.replace(/\s+/g, " ").trim(),
+        aliases: Array.isArray(data.aliases) ? data.aliases : [],
         assets: makeAssets(slug, { cover, preview, photos, download }),
         sourceCount: sources.length,
         extra

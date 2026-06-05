@@ -38,3 +38,7 @@
 - Phase 5 完了コメント: `_inbox/{slug}` をまとめて処理する `npm run import:all-inbox` を追加。dry-run と `--apply`、任意の `--merge` に対応した。
 - Phase 5 完了コメント: `_inbox/**` push または手動実行で import dry-run/apply/validate を行い、結果を `peter-evans/create-pull-request` で PR 化する `Import Inbox` workflow を追加した。main へ直接自動コミットしない。
 - Phase 5 検証: `_inbox` 空状態で `npm.cmd run import:all-inbox` 成功、`npm.cmd run build` 成功。
+- Phase 6 完了コメント: OGP/Twitter/canonical/RSS link meta を BaseLayout に追加し、cover があるモデル詳細では OGP image に使うようにした。
+- Phase 6 完了コメント: `sitemap.xml` と `rss.xml` を静的生成する endpoint を追加。`https://xenoah.github.io/archive-3dmodels/` 配下の URL を出力する。
+- Phase 6 完了コメント: Front Matter の `aliases` から旧URLリダイレクトページを生成する catch-all route を追加し、一覧検索は本文テキストも対象にした。
+- Phase 6 検証: `npm.cmd run build` 成功、`dist/sitemap.xml` と `dist/rss.xml` のURL確認済み。

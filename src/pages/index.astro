@@ -87,6 +87,7 @@ const latest = publicModels.slice(0, 3);
             href={`${base}/${model.slug}/`}
             data-title={model.title.toLowerCase()}
             data-summary={(model.summary || "").toLowerCase()}
+            data-body={(model.bodyText || "").toLowerCase()}
             data-category={model.category}
             data-tags={(model.tags ?? []).join(" ")}
             data-license={model.license}
@@ -155,7 +156,7 @@ const latest = publicModels.slice(0, 3);
       for (const card of sortedCards) grid?.append(card);
 
       for (const card of cards) {
-        const haystack = `${card.dataset.title} ${card.dataset.summary} ${card.dataset.tags}`;
+        const haystack = `${card.dataset.title} ${card.dataset.summary} ${card.dataset.tags} ${card.dataset.body}`;
         const visible =
           (!q || haystack.includes(q)) &&
           (!category || card.dataset.category === category) &&

@@ -1,8 +1,10 @@
 ---
 import "../styles/global.css";
 
-const { title = "3D Models", description = "3D model archive for downloads." } = Astro.props;
+const { title = "3D Models", description = "3D model archive for downloads.", image = "" } = Astro.props;
 const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+const canonical = Astro.url.href;
+const imageUrl = image ? new URL(image, Astro.site).href : "";
 ---
 
 <!doctype html>
@@ -11,6 +13,17 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, "");
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    {imageUrl && <meta property="og:image" content={imageUrl} />}
+    <meta name="twitter:card" content={imageUrl ? "summary_large_image" : "summary"} />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    {imageUrl && <meta name="twitter:image" content={imageUrl} />}
+    <link rel="alternate" type="application/rss+xml" title="3D Models RSS" href={`${base}/rss.xml`} />
     <meta
       http-equiv="Content-Security-Policy"
       content="default-src 'self'; script-src 'self' 'unsafe-inline' https://unpkg.com; style-src 'self' 'unsafe-inline'; img-src 'self' data:; model-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'none';"
@@ -28,6 +41,7 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, "");
           <div class="nav-links">
             <a href={`${base}/`}>Models</a>
             <a href={`${base}/terms/`}>Terms</a>
+            <a href={`${base}/rss.xml`}>RSS</a>
           </div>
         </nav>
       </header>
