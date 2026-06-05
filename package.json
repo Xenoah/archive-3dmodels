@@ -8,6 +8,7 @@
     "import:inbox": "node scripts/import-inbox.mjs",
     "import:loose": "node scripts/import-loose.mjs",
     "normalize:model": "node scripts/normalize-model.mjs",
+    "optimize:images": "node scripts/optimize-images.mjs",
     "validate": "node scripts/validate-models.mjs",
     "generate": "node scripts/generate-zip.mjs && node scripts/generate-manifest.mjs",
     "build": "npm run validate && npm run generate && astro build",

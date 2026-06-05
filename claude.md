@@ -31,3 +31,7 @@
 - Phase 3 完了コメント: 詳細ページにタグ/カテゴリ一致で関連モデルを最大3件表示する `Related Models` を追加した。
 - Phase 3 完了コメント: 文字化けしていた `index.astro`, `[slug].astro`, `terms.astro` のUI文言をASCII中心に整理。`terms` も普通のGUIページとして生成される。
 - Phase 3 検証: `npm.cmd run build` 成功。
+- Phase 4 完了コメント: validate に危険ファイル名、hardlink、secret/API keyらしき文字列、メール/電話/住所らしき文字列、PDFメタ情報警告を追加した。
+- Phase 4 完了コメント: BaseLayout に CSP meta を追加し、Dependabot と Dependency Review workflow を追加した。
+- Phase 4 完了コメント: 依存追加なしで JPEG APP1(EXIF/XMP) を dry-run/apply で除去できる `npm run optimize:images` を追加した。
+- Phase 4 検証: `npm.cmd run build` 成功、`npm.cmd run optimize:images` dry-run 成功。

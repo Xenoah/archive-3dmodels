@@ -15,15 +15,18 @@ import {
   ALLOWED_EXTENSIONS,
   CATEGORIES,
   CONTENT_MODELS_DIR,
+  FORBIDDEN_FILENAMES,
   FORBIDDEN_EXTENSIONS,
   GENERATED_DATA_FILE,
   IMAGE_EXTENSIONS,
   INBOX_DIR,
   KNOWN_FRONTMATTER_KEYS,
   MAX_FILE_BYTES,
+  PERSONAL_INFO_PATTERNS,
   PREVIEW_EXTENSIONS,
   PUBLIC_DIR,
   REPORTS_DIR,
+  SECRET_PATTERNS,
   SLUG_RE,
   SOURCE_EXTENSIONS,
   STATUSES,
@@ -136,19 +139,46 @@ async function validateFileTree(dir, report, slug) {
   for (const file of files) {
     const relative = path.relative(".", file).replace(/\\/g, "/");
     const ext = path.extname(file).toLowerCase();
+    const basename = path.basename(file).toLowerCase();
     const fileStat = await lstat(file);
     if (fileStat.isSymbolicLink()) {
       report.errors.push({ code: "symlink", slug, message: `${relative}: symlink is not allowed.` });
+    }
+    if (fileStat.nlink > 1) {
+      report.errors.push({ code: "hardlink", slug, message: `${relative}: hardlink is not allowed.` });
     }
     if (fileStat.size >= MAX_FILE_BYTES) {
       report.errors.push({ code: "large-file", slug, message: `${relative}: file is 100MiB or larger.` });
     } else if (fileStat.size >= WARN_FILE_BYTES) {
       report.warnings.push({ code: "large-file-warn", slug, message: `${relative}: file is larger than 50MiB.` });
     }
-    if (FORBIDDEN_EXTENSIONS.has(ext)) {
+    if (FORBIDDEN_FILENAMES.has(basename)) {
+      report.errors.push({ code: "forbidden-filename", slug, message: `${relative}: filename is forbidden.` });
+    } else if (FORBIDDEN_EXTENSIONS.has(ext)) {
       report.errors.push({ code: "forbidden-extension", slug, message: `${relative}: ${ext} is forbidden.` });
     } else if (ext && !ALLOWED_EXTENSIONS.has(ext) && !relative.endsWith(".gitkeep")) {
       report.warnings.push({ code: "unknown-extension", slug, message: `${relative}: unknown extension.` });
+    }
+    if (ext === ".pdf") {
+      report.warnings.push({ code: "pdf-metadata", slug, message: `${relative}: PDF may contain metadata; review before publishing.` });
+    }
+    await scanSensitiveText(file, relative, report, slug, fileStat.size);
+  }
+}
+
+async function scanSensitiveText(file, relative, report, slug, size) {
+  const ext = path.extname(file).toLowerCase();
+  const textExtensions = new Set([".md", ".txt", ".json", ".yaml", ".yml", ".csv", ".tsv"]);
+  if (!textExtensions.has(ext) || size > 1024 * 1024) return;
+  const text = await readFile(file, "utf8");
+  for (const item of SECRET_PATTERNS) {
+    if (item.pattern.test(text)) {
+      report.errors.push({ code: "secret-detected", slug, message: `${relative}: possible ${item.name} detected.` });
+    }
+  }
+  for (const item of PERSONAL_INFO_PATTERNS) {
+    if (item.pattern.test(text)) {
+      report.warnings.push({ code: "personal-info", slug, message: `${relative}: possible ${item.name} detected.` });
     }
   }
 }
