@@ -17,3 +17,4 @@
 - Jekyll が `src/pages/terms.astro` を Front Matter として読んで `Invalid YAML front matter` で失敗していた。
 - 原因は Pages 設定が `Deploy from branch` 側になっている可能性が高い。自動走査/zip生成を使うには Pages source を `GitHub Actions` にする必要がある。
 - workflow に `actions/configure-pages@v5` を追加して、Actions デプロイ構成を明示した。
+- `content/test/XYZ_30cube.stl` を `content/models/test/source/XYZ_30cube.stl` に移動し、`content/models/test/test.md` を `status: public` で作成。cover/photos/GLB は未設定なので WARN は出るが、一覧・詳細・zip生成確認用としては動く。
