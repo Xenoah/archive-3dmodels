@@ -33,7 +33,7 @@ import { parseFrontmatter } from "./frontmatter.mjs";
 import { containsRawHtml, renderMarkdown } from "./markdown.mjs";
 
 export function siteBase() {
-  const raw = process.env.PUBLIC_BASE_PATH ?? "/models";
+  const raw = process.env.PUBLIC_BASE_PATH ?? "/archive-3dmodels";
   return `/${raw.replace(/^\/+|\/+$/g, "")}`;
 }
 
