@@ -22,3 +22,5 @@
 - manifest/asset URL 用の `siteBase()` も `/archive-3dmodels` をデフォルトに変更。これでローカル build でも download URL が `/archive-3dmodels/test/downloads/...` になる。
 - サイトUIは静的 HTML/CSS/JS 出力のまま、ヒーロー、サマリーパネル、カード、軽い hover 表現を追加して、重い画像やフレームワークを増やさずリッチ寄りに調整した。
 - ユーザーから「UIがテキストベース」「ページは普通にGUIでいい」と指摘あり。STLのみで cover/GLB/photos がないと文字中心に見えるため、CSSだけの3D風プレースホルダー、詳細ページの action strip、カードの視覚表現を追加した。
+- ユーザーが `content/models/test/Screenshot 2026-06-05 222319.png` を追加。`cover.png` にコピーし、`photos/photo-001.png` に移動した。
+- 画像追加後 `npm.cmd run build` 成功。cover/photos の WARN は消え、残り WARN は `model.glb` なしのみ。download zip は `test-v0.1.0-94cbb71.zip` に更新。
