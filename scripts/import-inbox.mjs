@@ -46,6 +46,7 @@ const previews = entries.filter((entry) => PREVIEW_EXTENSIONS.has(path.extname(e
 const sources = entries.filter((entry) => SOURCE_EXTENSIONS.has(path.extname(entry.name).toLowerCase()));
 const markdown = sources.find((entry) => path.extname(entry.name).toLowerCase() === ".md");
 const sourceFiles = sources.filter((entry) => path.extname(entry.name).toLowerCase() !== ".md");
+const firstPhotoIndex = await nextPhotoIndex(path.join(modelDir, "photos"));
 
 const plans = [];
 if (!existsSync(modelDir)) {
@@ -60,7 +61,7 @@ if (!existsSync(path.join(modelDir, `${slug}.md`))) {
 
 images.forEach((entry, index) => {
   const ext = path.extname(entry.name).toLowerCase();
-  if (index === 0 && !existsSync(path.join(modelDir, `cover${ext}`))) {
+  if (index === 0 && !(existsSync(path.join(modelDir, "cover.jpg")) || existsSync(path.join(modelDir, "cover.png")))) {
     plans.push({
       type: "copy",
       from: path.join(inboxDir, entry.name),
@@ -70,16 +71,22 @@ images.forEach((entry, index) => {
   plans.push({
     type: "copy",
     from: path.join(inboxDir, entry.name),
-    target: path.join(modelDir, "photos", `photo-${String(index + 1).padStart(3, "0")}${ext}`)
+    target: path.join(modelDir, "photos", `photo-${String(firstPhotoIndex + index).padStart(3, "0")}${ext}`)
   });
 });
 
 if (previews[0] && !existsSync(path.join(modelDir, "model.glb"))) {
   plans.push({ type: "copy", from: path.join(inboxDir, previews[0].name), target: path.join(modelDir, "model.glb") });
+} else if (previews[0]) {
+  console.warn(`[WARN] ${slug}: model.glb already exists; preview ${previews[0].name} was not imported.`);
 }
 
 for (const entry of sourceFiles) {
-  plans.push({ type: "copy", from: path.join(inboxDir, entry.name), target: path.join(modelDir, "source", entry.name) });
+  plans.push({
+    type: "copy",
+    from: path.join(inboxDir, entry.name),
+    target: uniqueTarget(path.join(modelDir, "source"), entry.name)
+  });
 }
 
 console.log(`[INFO] ${apply ? "apply" : "dry-run"} import for ${slug}`);
@@ -131,4 +138,26 @@ async function initialMarkdown(slugValue, sourceMarkdown) {
     },
     body
   );
+}
+
+async function nextPhotoIndex(photosDir) {
+  if (!existsSync(photosDir)) return 1;
+  const entries = await readdir(photosDir, { withFileTypes: true });
+  const indices = entries
+    .filter((entry) => entry.isFile())
+    .map((entry) => /^photo-(\d{3,})\.[a-z0-9]+$/i.exec(entry.name))
+    .filter(Boolean)
+    .map((match) => Number(match[1]));
+  return indices.length === 0 ? 1 : Math.max(...indices) + 1;
+}
+
+function uniqueTarget(dir, fileName) {
+  const parsed = path.parse(fileName);
+  let candidate = path.join(dir, fileName);
+  let index = 2;
+  while (existsSync(candidate)) {
+    candidate = path.join(dir, `${parsed.name}-${index}${parsed.ext}`);
+    index += 1;
+  }
+  return candidate;
 }
