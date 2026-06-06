@@ -14,7 +14,6 @@ on:
 
 permissions:
   contents: write
-  pull-requests: write
 
 jobs:
   import:
@@ -51,15 +50,15 @@ jobs:
       - name: Validate imported draft models
         run: npm run validate
 
-      - name: Create import pull request
-        uses: peter-evans/create-pull-request@v6
-        with:
-          branch: inbox/import-${{ github.run_id }}
-          delete-branch: true
-          commit-message: "import inbox models"
-          title: "Import inbox models"
-          body: |
-            This PR was generated from `_inbox/{slug}` folders.
+      - name: Commit imported models
+        run: |
+          if [ -z "$(git status --porcelain)" ]; then
+            echo "No import changes to commit."
+            exit 0
+          fi
 
-            Imported models stay as `status: "draft"` by default.
-            Review the generated Markdown, metadata, source files, and warnings before changing a model to public.
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "import inbox models"
+          git push
