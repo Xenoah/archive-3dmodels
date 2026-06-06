@@ -7,7 +7,7 @@ import { titleFromSlug } from "./lib/model-utils.mjs";
 const slug = process.argv[2];
 if (!slug || !SLUG_RE.test(slug)) {
   console.error("[ERROR] usage: npm run new:model {slug}");
-  console.error("[ERROR] slug may contain a-z, 0-9, - and _ only.");
+  console.error("[ERROR] slug may contain A-Z, a-z, 0-9, - and _ only.");
   process.exit(1);
 }
 

@@ -168,6 +168,7 @@ slugはURL、Markdown名、zip名、内部IDに使う。
 
 ```text
 a-z
+A-Z
 0-9
 -
 _
