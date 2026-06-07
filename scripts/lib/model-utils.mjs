@@ -33,7 +33,7 @@ import {
   STATUSES,
   WARN_FILE_BYTES
 } from "./constants.mjs";
-import { fileCreatedYearMonth } from "./date-utils.mjs";
+import { dateTimeValue, fileCreatedDate, formatYearMonth } from "./date-utils.mjs";
 import { parseFrontmatter } from "./frontmatter.mjs";
 import { containsRawHtml, renderMarkdown } from "./markdown.mjs";
 
@@ -283,7 +283,11 @@ export async function collectModels(report, options = {}) {
     const photos = await findPhotos(dir);
     const sources = await findSources(dir);
     const download = await findDownload(slug);
-    const created = data.created || (await sourceCreatedYearMonth(sources)) || "";
+    const sourceCreatedAt = await sourceCreatedDateTime(sources);
+    const createdAt = dateTimeValue(data.createdAt, "") || dateTimeValue(data.created, "") || sourceCreatedAt;
+    const uploadedAt = dateTimeValue(data.uploadedAt, "");
+    const updatedAt = dateTimeValue(data.updatedAt, "") || dateTimeValue(data.updated, "") || createdAt;
+    const created = data.created || (createdAt ? formatYearMonth(new Date(createdAt)) : "") || "";
     const hasViewerSource = sources.some((source) => [".fbx", ".step", ".stp", ".stl"].includes(path.extname(source).toLowerCase()));
 
     if (!cover) report.warnings.push({ code: "missing-cover", slug, message: `${slug}: cover image is missing.` });
@@ -309,8 +313,11 @@ export async function collectModels(report, options = {}) {
         unit: data.unit || "mm",
         scale: data.scale || "",
         created,
-        uploaded: data.uploaded || "",
+        createdAt,
+        uploaded: data.uploaded || (uploadedAt ? formatYearMonth(new Date(uploadedAt)) : ""),
+        uploadedAt,
         updated: data.updated || created || "",
+        updatedAt,
         commercial_use: data.commercial_use,
         redistribution: data.redistribution,
         modification: data.modification,
@@ -326,18 +333,18 @@ export async function collectModels(report, options = {}) {
   }
 
   return models.sort((a, b) => {
-    const left = a.updated || "";
-    const right = b.updated || "";
+    const left = a.updatedAt || a.updated || "";
+    const right = b.updatedAt || b.updated || "";
     if (left !== right) return right.localeCompare(left);
     return a.title.localeCompare(b.title);
   });
 }
 
-async function sourceCreatedYearMonth(sources) {
+async function sourceCreatedDateTime(sources) {
   const modelSources = sources.filter((source) => [".fbx", ".step", ".stp", ".stl", ".3mf", ".obj", ".glb"].includes(path.extname(source).toLowerCase()));
   const source = selectPrimarySource(modelSources);
   if (!source) return "";
-  return fileCreatedYearMonth(source);
+  return dateTimeValue(await fileCreatedDate(source));
 }
 
 function selectPrimarySource(sources) {

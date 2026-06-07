@@ -124,8 +124,8 @@ const latest = listedModels.slice(0, 3);
             data-category={model.category}
             data-tags={(model.tags ?? []).join(" ")}
             data-license={model.license}
-            data-updated={model.updated || ""}
-            data-created={model.created || ""}
+            data-updated={model.updatedAt || model.updated || ""}
+            data-created={model.createdAt || model.created || ""}
           >
             <div class="thumb">
               {model.status === "draft" && <div class="draft-badge">DRAFT</div>}

@@ -15,6 +15,23 @@ const creditJa = model.credit_required === true ? "必要" : model.credit_requir
 const creditEn = model.credit_required === true ? "Required" : model.credit_required === false ? "Not required" : "Check notes";
 const boolLabelJa = (value) => (value === true ? "許可" : value === false ? "不可" : "注記を確認");
 const boolLabelEn = (value) => (value === true ? "Allowed" : value === false ? "Not allowed" : "Check notes");
+const formatDateTime = (value, locale) => {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return new Intl.DateTimeFormat(locale, {
+    timeZone: "Asia/Tokyo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false
+  }).format(date);
+};
+const uploadedAtJa = formatDateTime(model.uploadedAt, "ja-JP");
+const uploadedAtEn = formatDateTime(model.uploadedAt, "en-US");
 const relatedModels = models
   .filter((item) => item.status === "public" && item.slug !== model.slug)
   .map((item) => {
@@ -148,6 +165,12 @@ const relatedModels = models
       {model.created ? <dd>{model.created}</dd> : <dd data-lang-ja="未指定" data-lang-en="unspecified">未指定</dd>}
       <dt data-lang-ja="アップロード日" data-lang-en="Uploaded">アップロード日</dt>
       {model.uploaded ? <dd>{model.uploaded}</dd> : <dd data-lang-ja="未指定" data-lang-en="unspecified">未指定</dd>}
+      {uploadedAtJa && (
+        <>
+          <dt data-lang-ja="アップロード日時" data-lang-en="Uploaded at">アップロード日時</dt>
+          <dd data-lang-ja={uploadedAtJa} data-lang-en={uploadedAtEn}>{uploadedAtJa}</dd>
+        </>
+      )}
       <dt data-lang-ja="ソースファイル" data-lang-en="Source files">ソースファイル</dt>
       <dd>{model.sourceCount}</dd>
       {model.assets.sources?.length > 0 && (

@@ -10,7 +10,14 @@ import {
   SLUG_RE,
   SOURCE_EXTENSIONS
 } from "./lib/constants.mjs";
-import { currentYearMonth, fileCreatedYearMonth, yearMonthValue } from "./lib/date-utils.mjs";
+import {
+  currentDateTime,
+  currentYearMonth,
+  dateTimeValue,
+  fileCreatedDate,
+  formatYearMonth,
+  yearMonthValue
+} from "./lib/date-utils.mjs";
 import { parseFrontmatter, stringifyFrontmatter } from "./lib/frontmatter.mjs";
 import { titleFromSlug } from "./lib/model-utils.mjs";
 
@@ -49,12 +56,14 @@ const markdown = sources.find((entry) => path.extname(entry.name).toLowerCase() 
 const sourceFiles = sources.filter((entry) => path.extname(entry.name).toLowerCase() !== ".md");
 const hasFbxSource = sourceFiles.some((entry) => path.extname(entry.name).toLowerCase() === ".fbx");
 const modelSource = selectModelSource([...sourceFiles, ...previews]);
-const modelCreated = modelSource
-  ? await fileCreatedYearMonth(path.join(inboxDir, modelSource.name), {
+const modelCreatedDate = modelSource
+  ? await fileCreatedDate(path.join(inboxDir, modelSource.name), {
       uploadedSlug: slug,
       uploadedRelativePath: modelSource.name
     })
-  : currentYearMonth();
+  : new Date();
+const modelCreated = formatYearMonth(modelCreatedDate);
+const importUploadedAt = currentDateTime();
 const firstPhotoIndex = await nextPhotoIndex(path.join(modelDir, "photos"));
 
 const plans = [];
@@ -125,11 +134,18 @@ for (const plan of plans) {
     }
   }
   if (plan.type === "write-md") {
-    await writeFile(plan.target, await initialMarkdown(slug, markdown ? path.join(inboxDir, markdown.name) : null, modelCreated));
+    await writeFile(
+      plan.target,
+      await initialMarkdown(slug, markdown ? path.join(inboxDir, markdown.name) : null, {
+        created: modelCreated,
+        createdAt: modelCreatedDate,
+        uploadedAt: importUploadedAt
+      })
+    );
   }
 }
 
-async function initialMarkdown(slugValue, sourceMarkdown, createdFallback) {
+async function initialMarkdown(slugValue, sourceMarkdown, dateFallbacks) {
   let body = "";
   let data = {};
   if (sourceMarkdown) {
@@ -147,8 +163,11 @@ async function initialMarkdown(slugValue, sourceMarkdown, createdFallback) {
       version: data.version || "0.1.0",
       status: data.status || "public",
       unit: data.unit || "mm",
-      created: yearMonthValue(data.created, createdFallback),
+      created: yearMonthValue(data.created, dateFallbacks.created),
+      createdAt: dateTimeValue(data.createdAt, dateFallbacks.createdAt),
       uploaded: yearMonthValue(data.uploaded, currentYearMonth()),
+      uploadedAt: dateTimeValue(data.uploadedAt, dateFallbacks.uploadedAt),
+      updatedAt: dateTimeValue(data.updatedAt, data.createdAt || dateFallbacks.createdAt),
       commercial_use: data.commercial_use ?? false,
       redistribution: data.redistribution ?? false,
       modification: data.modification ?? true,

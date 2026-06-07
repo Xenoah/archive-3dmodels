@@ -5,28 +5,36 @@ import path from "node:path";
 import { UPLOADED_DIR } from "./constants.mjs";
 
 export async function fileCreatedYearMonth(file, options = {}) {
+  return formatYearMonth(await fileCreatedDate(file, options));
+}
+
+export async function fileCreatedDate(file, options = {}) {
   const metadataDate = await modelMetadataDate(file);
-  if (metadataDate) return formatYearMonth(metadataDate);
+  if (metadataDate) return metadataDate;
 
   const uploadedFile = uploadedOriginalCandidate(file, options);
   if (uploadedFile) {
     const uploadedMetadataDate = await modelMetadataDate(uploadedFile);
-    if (uploadedMetadataDate) return formatYearMonth(uploadedMetadataDate);
+    if (uploadedMetadataDate) return uploadedMetadataDate;
 
     const uploadedStat = await stat(uploadedFile);
-    return formatYearMonth(earliestFileDate(uploadedStat));
+    return earliestFileDate(uploadedStat);
   }
 
   const gitDate = gitFirstCommitDate(file);
-  if (gitDate && isGitHubActions()) return formatYearMonth(gitDate);
+  if (gitDate && isGitHubActions()) return gitDate;
 
   const fileStat = await stat(file);
   const fileDate = earliestFileDate(fileStat);
-  return formatYearMonth(fileDate);
+  return fileDate;
 }
 
 export function currentYearMonth() {
   return formatYearMonth(new Date());
+}
+
+export function currentDateTime() {
+  return formatDateTimeSecond(new Date());
 }
 
 export function yearMonthValue(value, fallback) {
@@ -39,10 +47,22 @@ export function yearMonthValue(value, fallback) {
   return trimmed;
 }
 
+export function dateTimeValue(value, fallback = "") {
+  const parsed = parseDateLike(value);
+  if (parsed) return formatDateTimeSecond(parsed);
+
+  const fallbackParsed = parseDateLike(fallback);
+  return fallbackParsed ? formatDateTimeSecond(fallbackParsed) : "";
+}
+
 export function formatYearMonth(date) {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
   return `${year}年${month}月`;
+}
+
+export function formatDateTimeSecond(date) {
+  return date.toISOString().replace(/\.\d{3}Z$/, "Z");
 }
 
 async function modelMetadataDate(file) {
@@ -88,6 +108,22 @@ function parseLooseDate(value) {
     return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
   });
   const parsed = new Date(normalized);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+function parseDateLike(value) {
+  if (value instanceof Date) {
+    return Number.isNaN(value.getTime()) ? null : value;
+  }
+  if (typeof value !== "string" || value.trim() === "") return null;
+
+  const trimmed = value.trim();
+  const japaneseMonth = /^(\d{4})\u5e74(\d{1,2})\u6708$/.exec(trimmed);
+  if (japaneseMonth) {
+    return new Date(Date.UTC(Number(japaneseMonth[1]), Number(japaneseMonth[2]) - 1, 1, 0, 0, 0));
+  }
+
+  const parsed = new Date(trimmed);
   return Number.isNaN(parsed.getTime()) ? null : parsed;
 }
 
