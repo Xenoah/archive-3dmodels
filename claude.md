@@ -1,62 +1,258 @@
 # 作業メモ
 
-## 2026-06-05
+このリポジトリは `https://xenoah.github.io/archive-3dmodels/` で公開する、Xenoah の3Dモデル配布アーカイブ。
 
-- README.md を UTF-8 として確認した。
-- 仕様の中心は「GitHub Pages 上の静的 3D モデル配布サイト」。
-- MVP の必須範囲は Astro、Markdown + Front Matter、一覧/詳細ページ、cover/photos 表示、source から zip 生成、draft/public/hidden 制御、validate とレポート、GitHub Actions Pages deploy。
-- `status` 未指定は `draft` 扱い。`draft` は一覧にも詳細にも出さず、zip 生成もしない。
-- URL は README の例に合わせ、サイト base を `/models` にする。リポジトリ名と Pages の公開パスが異なる場合は `PUBLIC_BASE_PATH` で調整できるようにする。
-- 生成物は Git 管理しない方針。`src/data/models.generated.json` と `public/{slug}/...` はビルド時に再生成する。
-- raw HTML は Markdown レンダリング前に拒否し、描画側でも HTML をエスケープする方針。
-- まず Phase 1 MVP を実装し、Phase 2 の `_inbox` 系は安全な dry-run/apply の入口を入れる。
-- zip 生成後に manifest 生成で `public/` を丸ごと掃除すると downloads が消えるため、assets コピーでは `downloads/` を残すようにした。
-- `npm.cmd run build` 済み。空モデル状態で validate、zip 生成、manifest 生成、Astro build が成功した。
-- 現在の生成ページは `/models/` 相当のトップ/一覧と `/models/terms/`。public モデルが増えると `/models/{slug}/` も静的生成される。
-- Actions ログ確認。失敗していたのは独自 `deploy.yml` ではなく、GitHub Pages の標準 Jekyll build。
-- Jekyll が `src/pages/terms.astro` を Front Matter として読んで `Invalid YAML front matter` で失敗していた。
-- 原因は Pages 設定が `Deploy from branch` 側になっている可能性が高い。自動走査/zip生成を使うには Pages source を `GitHub Actions` にする必要がある。
-- workflow に `actions/configure-pages@v5` を追加して、Actions デプロイ構成を明示した。
-- `content/test/XYZ_30cube.stl` を `content/models/test/source/XYZ_30cube.stl` に移動し、`content/models/test/test.md` を `status: public` で作成。cover/photos/GLB は未設定なので WARN は出るが、一覧・詳細・zip生成確認用としては動く。
-- NotFound 対策。GitHub Pages のプロジェクトサイト URL は通常 `/archive-3dmodels/` なので、Astro と workflow の `PUBLIC_BASE_PATH` を `/models` から `/archive-3dmodels` に変更した。
-- manifest/asset URL 用の `siteBase()` も `/archive-3dmodels` をデフォルトに変更。これでローカル build でも download URL が `/archive-3dmodels/test/downloads/...` になる。
-- サイトUIは静的 HTML/CSS/JS 出力のまま、ヒーロー、サマリーパネル、カード、軽い hover 表現を追加して、重い画像やフレームワークを増やさずリッチ寄りに調整した。
-- ユーザーから「UIがテキストベース」「ページは普通にGUIでいい」と指摘あり。STLのみで cover/GLB/photos がないと文字中心に見えるため、CSSだけの3D風プレースホルダー、詳細ページの action strip、カードの視覚表現を追加した。
-- ユーザーが `content/models/test/Screenshot 2026-06-05 222319.png` を追加。`cover.png` にコピーし、`photos/photo-001.png` に移動した。
-- 画像追加後 `npm.cmd run build` 成功。cover/photos の WARN は消え、残り WARN は `model.glb` なしのみ。download zip は `test-v0.1.0-94cbb71.zip` に更新。
-- Phase 2 完了コメント: `import:inbox` は既存モデル merge 時に写真連番を継続し、source 同名衝突は `-2` 形式で回避するようにした。既存 `model.glb` がある場合は新規 preview を警告して取り込まない。
-- Phase 2 完了コメント: `normalize:model` はトップ階層の画像を `cover`/`photos/photo-###` に整理し、トップ階層の GLB/source を正規位置へ移動し、Markdown 内の単純な相対参照を更新するようにした。
-- Phase 2 検証: `npm.cmd run build` 成功、`npm.cmd run normalize:model test` dry-run 成功。
-- Phase 3 完了コメント: 一覧に並び替え (`Newest first`, `Name A-Z`, `Category`) を追加し、既存の検索/カテゴリ/タグ/ライセンス絞り込みと同時に動くようにした。
-- Phase 3 完了コメント: 詳細ページにタグ/カテゴリ一致で関連モデルを最大3件表示する `Related Models` を追加した。
-- Phase 3 完了コメント: 文字化けしていた `index.astro`, `[slug].astro`, `terms.astro` のUI文言をASCII中心に整理。`terms` も普通のGUIページとして生成される。
-- Phase 3 検証: `npm.cmd run build` 成功。
-- Phase 4 完了コメント: validate に危険ファイル名、hardlink、secret/API keyらしき文字列、メール/電話/住所らしき文字列、PDFメタ情報警告を追加した。
-- Phase 4 完了コメント: BaseLayout に CSP meta を追加し、Dependabot と Dependency Review workflow を追加した。
-- Phase 4 完了コメント: 依存追加なしで JPEG APP1(EXIF/XMP) を dry-run/apply で除去できる `npm run optimize:images` を追加した。
-- Phase 4 検証: `npm.cmd run build` 成功、`npm.cmd run optimize:images` dry-run 成功。
-- Phase 5 完了コメント: `_inbox/{slug}` をまとめて処理する `npm run import:all-inbox` を追加。dry-run と `--apply`、任意の `--merge` に対応した。
-- Phase 5 完了コメント: `_inbox/**` push または手動実行で import dry-run/apply/validate を行い、結果を `peter-evans/create-pull-request` で PR 化する `Import Inbox` workflow を追加した。main へ直接自動コミットしない。
-- Phase 5 検証: `_inbox` 空状態で `npm.cmd run import:all-inbox` 成功、`npm.cmd run build` 成功。
-- Phase 6 完了コメント: OGP/Twitter/canonical/RSS link meta を BaseLayout に追加し、cover があるモデル詳細では OGP image に使うようにした。
-- Phase 6 完了コメント: `sitemap.xml` と `rss.xml` を静的生成する endpoint を追加。`https://xenoah.github.io/archive-3dmodels/` 配下の URL を出力する。
-- Phase 6 完了コメント: Front Matter の `aliases` から旧URLリダイレクトページを生成する catch-all route を追加し、一覧検索は本文テキストも対象にした。
-- Phase 6 検証: `npm.cmd run build` 成功、`dist/sitemap.xml` と `dist/rss.xml` のURL確認済み。
-- STL preview update: 外部の model-viewer / Three.js に頼らず、`src/components/StlViewer.astro` で自前 WebGL STL プレビューを実装した。binary/ascii STL を fetch して直接 parse し、ドラッグ回転・ホイールズーム・Reset/Spin を提供する。
-- STL preview update: `source/*.stl` を `public/{slug}/source/` にコピーし、manifest の `assets.stlPreview` から詳細ページが表示する。CSP から `unpkg.com` を外し、通信先は self のみに戻した。
-- STL preview update: STL があるモデルでは `model.glb` 不在を警告しないようにした。GLB なしでも自前 STL preview が主経路になる。
+現在の実装に存在しない仕様や、古い `/models/` 前提の仕様は参照しないこと。
 
-## 2026-06-07 current behavior
+## 現行の重要仕様
 
-- `_inbox` import now defaults new models to `status: public` and `license: "CC BY 4.0"`.
-- `created` and `uploaded` are written as `YYYY年MM月`. If `created` is not specified, import derives it from the primary 3D model file creation time, falling back to modified time.
-- Imported `_inbox/{slug}` folders are archived to `_uploaded/{slug}` after successful apply.
-- Uppercase alphabet characters are allowed in uploaded model folder names.
-- Standalone 3D files placed directly under `_inbox` are auto-foldered before import. Supported loose model extensions include `.fbx`, `.step`, `.stp`, `.stl`, `.3mf`, `.obj`, and `.glb`; loose non-model files remain errors.
-- Copilot-facing generated Markdown/TODO text asks for missing metadata completion, but Copilot does not run automatically unless invoked by GitHub/Copilot tooling.
-- The web 3D viewer is now `src/components/ModelViewer.astro` using Three.js. Viewer priority is FBX, STEP/STP, then STL.
-- STEP/STP support uses `occt-import-js`; `npm run generate` copies the required JS/WASM files into `public/vendor/occt-import-js/`.
-- Viewer UI includes a loading spinner, reset, spin, wire mesh, material style, and lighting style controls.
-- Model list cards show a 3D preview when no cover/thumbnail image exists. Pointer hover movement rotates the preview.
-- Draft models show a grey `DRAFT` badge on the upper-left of the thumbnail.
-- Expected verification warning: the built Three.js/FBX viewer chunk is larger than Vite's 500 kB warning threshold, but `npm run build` succeeds.
+- Astro の静的サイト。
+- `astro.config.mjs` の既定値は `site: "https://xenoah.github.io"`、`base: "/archive-3dmodels"`。
+- モデルデータは `content/models/{slug}/{slug}.md`。
+- 生成データは `src/data/models.generated.json`。
+- 公開用アセットは `public/{slug}/` へ生成される。
+- `src/layouts/BaseLayout.astro` が全ページ共通の head、GA4、Search Console確認タグ、言語切替を持つ。
+- 日本語/英語切替あり。初期表示は日本語。
+- 作者表記は Xenoah。
+
+## 最近の主な作業
+
+### 言語切替
+
+- JP/EN切替を追加。
+- デフォルトは日本語。
+- `data-lang-ja` / `data-lang-en`、placeholder、aria-labelを切り替える。
+
+### GA4
+
+全ページ共通の head に Google tag を追加済み。
+
+```text
+G-PHNBTBWCDK
+```
+
+CSP は `googletagmanager.com` と `google-analytics.com` を許可している。
+
+### Google Search Console
+
+HTMLタグ方式で所有権確認済み。
+
+```html
+<meta name="google-site-verification" content="aPtYwfsh75Fol8ou1AKrAWZXEAKl97LEWKER4G2wiuQ">
+```
+
+このタグは削除しないこと。
+
+Search Console プロパティ:
+
+```text
+https://xenoah.github.io/archive-3dmodels/
+```
+
+送信する sitemap:
+
+```text
+https://xenoah.github.io/archive-3dmodels/sitemap.xml
+```
+
+### SEO
+
+実装済み:
+
+- canonical
+- meta description
+- robots meta
+- OGP / Twitter Card
+- JSON-LD
+  - WebSite
+  - CollectionPage
+  - CreativeWork
+  - BreadcrumbList
+  - WebPage
+- sitemap.xml
+- robots.txt
+- RSS
+
+`sitemap.xml` は `public` モデルだけを含める。
+
+`draft` と `hidden` の詳細ページは生成されるが、`noindex, follow`。
+
+### 3Dビューア
+
+`src/components/ModelViewer.astro` を使う。
+
+優先順位:
+
+```text
+FBX
+STEP/STP
+STL
+```
+
+STEP/STP は `occt-import-js` を使用する。`npm run generate` で `public/vendor/occt-import-js/` に必要ファイルをコピーする。
+
+ビューアは Three.js chunk が大きいため、Vite の 500kB 警告が出ることがある。現在は警告のみでビルド成功する。
+
+### 日付管理
+
+表示用:
+
+```text
+created
+uploaded
+updated
+```
+
+内部用:
+
+```text
+createdAt
+uploadedAt
+updatedAt
+```
+
+`*At` は秒単位のISO日時。
+
+モデル移動後の作成日推定では、`content/models/{slug}/source/` だけでなく `_uploaded/{slug}/` の同名ファイルも見る。
+
+ただし Git は元のOS作成日時を保持しないため、正確に残したい場合は Front Matter に明示する。
+
+### ZIP生成
+
+`scripts/generate-zip.mjs` がZIPを作る。
+
+ZIPに含める:
+
+```text
+readme.txt
+3Dモデルファイル
+```
+
+ZIPに含めない:
+
+```text
+LICENSE.txt
+README.md
+images/
+cover画像
+photos画像
+.txt .md .pdf などの補足資料
+```
+
+古いZIPは生成時に削除される。
+
+現在のモデル一覧に存在しない `public/{slug}` の古い公開フォルダも、生成時に掃除する。
+
+### 注意事項と免責
+
+詳細ページのダウンロード欄に、スクロール可能な注意事項ボックスを表示する。
+
+- 日本語文
+- 英語文
+- 作者 Xenoah の免責
+
+ダウンロードボタンは注意事項欄の後に置く。
+
+### ライセンス表記
+
+`src/pages/terms.astro` に利用ライブラリ表記を追加済み。
+
+```text
+Astro: MIT License
+three.js: MIT License
+occt-import-js: LGPL-2.1
+Google tag / Google Analytics
+```
+
+## status
+
+| status | 一覧 | 詳細 | sitemap | robots | ZIP |
+| --- | --- | --- | --- | --- | --- |
+| public | 表示 | 生成 | 含める | index, follow | 生成 |
+| draft | 表示、DRAFTバッジ付き | 生成 | 含めない | noindex, follow | 生成しない |
+| hidden | 非表示 | 生成 | 含めない | noindex, follow | 生成 |
+
+`private` は無効。`status is invalid` の原因になる。
+
+## `_inbox` import
+
+主なコマンド:
+
+```bash
+npm run import:inbox {slug}
+npm run import:inbox {slug} -- --apply
+npm run import:all-inbox
+npm run import:all-inbox -- --apply
+```
+
+既存モデルへ追加:
+
+```bash
+npm run import:inbox {slug} -- --merge
+npm run import:inbox {slug} -- --merge --apply
+```
+
+新規importの既定値:
+
+```yaml
+license: "CC BY 4.0"
+status: "public"
+unit: "mm"
+commercial_use: false
+redistribution: false
+modification: true
+credit_required: true
+```
+
+説明文にCopilot向けプロンプトは入れない。本文は空欄から始める。
+
+`import:all-inbox -- --apply` 後は、処理済み `_inbox/{slug}` を `_uploaded/{slug}` へ移動する。
+
+## 検証
+
+通常確認:
+
+```bash
+npm.cmd run validate
+npm.cmd run build
+```
+
+PowerShell環境では `npm` ではなく `npm.cmd` を使うと実行ポリシーに引っかかりにくい。
+
+現在よく出る警告:
+
+- cover image is missing
+- photos are empty
+- status is draft
+- unknown extension `.f3d`
+- Vite chunk size warning
+
+これらは現状、ビルド失敗ではない。
+
+## 現在の重要ファイル
+
+```text
+src/layouts/BaseLayout.astro
+src/pages/index.astro
+src/pages/[slug].astro
+src/pages/terms.astro
+src/pages/sitemap.xml.js
+src/pages/robots.txt.js
+src/components/ModelViewer.astro
+scripts/generate-zip.mjs
+scripts/generate-manifest.mjs
+scripts/import-inbox.mjs
+scripts/import-all-inbox.mjs
+scripts/lib/date-utils.mjs
+scripts/lib/model-utils.mjs
+scripts/lib/constants.mjs
+```
+
+## 触るときの注意
+
+- `src/data/models.generated.json` と `public/{slug}/` は生成物。`npm run generate` / `npm run build` で更新される。
+- Search Console確認タグは消さない。
+- GA4タグは `BaseLayout.astro` にある。
+- ZIP仕様を変える場合は、生成後に実際のZIPを開いて中身を確認する。
+- SEO変更時は `dist/sitemap.xml`、`dist/robots.txt`、生成HTMLの head を確認する。
+- `draft` を検索結果に出さないため、sitemapには含めず、詳細ページは `noindex, follow`。
