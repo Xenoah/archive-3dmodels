@@ -15,13 +15,4 @@ modification: true
 credit_required: true
 ---
 
-TODO: Write the model overview.
 
-## Copilot fill-in notes
-
-Copilot should fill missing information from the uploaded model files and filenames.
-
-- Add a short summary.
-- Add useful tags.
-- Describe scale, material, print settings, and usage notes if they can be inferred.
-- Review `status: public` before publishing if the model should stay private.
