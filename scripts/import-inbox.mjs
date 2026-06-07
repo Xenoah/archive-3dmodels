@@ -49,7 +49,12 @@ const markdown = sources.find((entry) => path.extname(entry.name).toLowerCase() 
 const sourceFiles = sources.filter((entry) => path.extname(entry.name).toLowerCase() !== ".md");
 const hasFbxSource = sourceFiles.some((entry) => path.extname(entry.name).toLowerCase() === ".fbx");
 const modelSource = selectModelSource([...sourceFiles, ...previews]);
-const modelCreated = modelSource ? await fileCreatedYearMonth(path.join(inboxDir, modelSource.name)) : currentYearMonth();
+const modelCreated = modelSource
+  ? await fileCreatedYearMonth(path.join(inboxDir, modelSource.name), {
+      uploadedSlug: slug,
+      uploadedRelativePath: modelSource.name
+    })
+  : currentYearMonth();
 const firstPhotoIndex = await nextPhotoIndex(path.join(modelDir, "photos"));
 
 const plans = [];

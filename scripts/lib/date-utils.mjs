@@ -1,10 +1,21 @@
 import { execFileSync } from "node:child_process";
+import { existsSync } from "node:fs";
 import { open, stat } from "node:fs/promises";
 import path from "node:path";
+import { UPLOADED_DIR } from "./constants.mjs";
 
-export async function fileCreatedYearMonth(file) {
+export async function fileCreatedYearMonth(file, options = {}) {
   const metadataDate = await modelMetadataDate(file);
   if (metadataDate) return formatYearMonth(metadataDate);
+
+  const uploadedFile = uploadedOriginalCandidate(file, options);
+  if (uploadedFile) {
+    const uploadedMetadataDate = await modelMetadataDate(uploadedFile);
+    if (uploadedMetadataDate) return formatYearMonth(uploadedMetadataDate);
+
+    const uploadedStat = await stat(uploadedFile);
+    return formatYearMonth(earliestFileDate(uploadedStat));
+  }
 
   const gitDate = gitFirstCommitDate(file);
   if (gitDate && isGitHubActions()) return formatYearMonth(gitDate);
@@ -118,6 +129,27 @@ function gitPathCandidates(file) {
   }
 
   return [...new Set(candidates)];
+}
+
+function uploadedOriginalCandidate(file, options = {}) {
+  if (options.uploadedSlug && options.uploadedRelativePath) {
+    const candidate = path.join(UPLOADED_DIR, options.uploadedSlug, options.uploadedRelativePath);
+    if (existsSync(candidate)) return candidate;
+
+    const basenameCandidate = path.join(UPLOADED_DIR, options.uploadedSlug, path.basename(options.uploadedRelativePath));
+    if (existsSync(basenameCandidate)) return basenameCandidate;
+  }
+
+  const relativePath = path.relative(process.cwd(), file).replace(/\\/g, "/");
+  const contentSourceFile = /^content\/models\/([^/]+)\/source\/(.+)$/.exec(relativePath);
+  if (!contentSourceFile) return null;
+
+  const [, slug, sourceRelativePath] = contentSourceFile;
+  const candidate = path.join(UPLOADED_DIR, slug, sourceRelativePath);
+  if (existsSync(candidate)) return candidate;
+
+  const basenameCandidate = path.join(UPLOADED_DIR, slug, path.basename(sourceRelativePath));
+  return existsSync(basenameCandidate) ? basenameCandidate : null;
 }
 
 function earliestFileDate(fileStat) {
