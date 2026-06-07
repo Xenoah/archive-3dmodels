@@ -215,7 +215,7 @@ _inbox/usb-a-cat/
 └─ IMG_001.jpg
 ```
 
-これだけで下書き生成可能とする。
+これだけでpublicモデルを生成可能とする。
 
 ### 8.2 `_inbox` に入れられるもの
 
@@ -670,14 +670,14 @@ scale: "1:1"
 優先順位。
 
 ```text
-1. model.glb
-2. preview.glb
-3. フォルダ内の最初の .glb
+1. FBX
+2. STEP / STP
+3. STL
 4. なし
 ```
 
-GLBがない場合、3Dプレビューは表示しない。
-写真ギャラリーのみ表示する。
+cover/thumbnailがない場合は、一覧のサムネイルにも3Dプレビューを表示する。
+3DプレビューはFBX、STEP/STP、STLの順で選択する。
 
 ### 19.3 photos
 
@@ -930,7 +930,7 @@ path traversalがある
 
 ```text
 coverがない
-model.glbがない
+3Dプレビュー対象がない
 photosが空
 sourceが空
 summaryがない
@@ -1025,10 +1025,13 @@ tokenらしき文字列
 ### 24.7 公開事故防止
 
 ```text
-_inbox生成物は必ずdraft
-status未指定はdraft
-public化にはtitle/category/tags/license/unit必須
-draftはzip生成しない
+_inbox生成物は標準でpublic
+status未指定はpublic
+license未指定はCC BY 4.0
+created/uploadedはYYYY年MM月
+created未指定時は3Dモデルファイルの作成日から取得
+publicモデルにはtitle/category/tags/license/unit必須
+draftは一覧サムネイル左上にDRAFT表示
 ```
 
 ## 25. サイト画面仕様
@@ -1111,19 +1114,23 @@ cover
 
 ### 25.4 3Dプレビュー
 
-`model.glb` がある場合のみ表示。
+FBX、STEP/STP、STLがある場合に表示。
 
 機能。
 
 ```text
-回転
-拡大縮小
-自動回転
+ドラッグ回転
+ホイールズーム
+ローディングスピナー
+サムネイルhover時のカーソル追従回転
 リセット
-フルスクリーン
+自動回転
+ワイヤーメッシュ
+マテリアル切り替え
+ライティング切り替え
 ```
 
-`model.glb` がない場合は写真ギャラリーを主表示とする。
+サムネイル画像がない場合は、一覧カードにも3Dプレビューを表示する。
 
 ### 25.5 ダウンロード欄
 
@@ -1148,11 +1155,11 @@ Download ZIP
 
 ```text
 1. GitHubまたはローカルで _inbox/{slug}/ を作る
-2. STLと画像を入れる
+2. 3Dモデルと画像を入れる
 3. import:inbox を実行
-4. draftモデルが生成される
+4. publicモデルが生成される
 5. mdを軽く編集
-6. statusをpublicへ変更
+6. 非公開にしたい場合はstatusをdraftへ変更
 7. push
 8. GitHub Actionsで公開
 ```
@@ -1186,7 +1193,7 @@ content/models/usb-a-cat/
 6. dry-run確認
 7. npm run normalize:model usb-a-cat -- --apply
 8. npm run validate
-9. statusをpublicへ変更
+9. statusを確認
 10. push
 ```
 
@@ -1207,7 +1214,7 @@ content/models/usb-a-cat/
 画像は photos/photo-次番号 に追加
 sourceファイルは source/ に追加
 mdは上書きしない
-model.glbが既にあれば警告
+既存のプレビュー/ソースと衝突する場合は警告
 ```
 
 ### 26.4 GitHub Web UI利用フロー
@@ -1217,15 +1224,15 @@ Phase 2で対応する。
 ```text
 1. GitHub Web UIで _inbox/{slug}/ にファイルアップロード
 2. GitHub Actionsが検証
-3. import結果をPRとして作成
-4. PR上で差分確認
-5. 問題なければmerge
-6. draftとしてサイト生成
-7. mdを編集してpublic化
+3. import結果をmainへ自動コミット
+4. コミット差分を確認
+5. 必要に応じてmdを編集
+6. publicとしてサイト生成
+7. 非公開にしたい場合はstatusをdraftへ変更
 ```
 
-MVPではmainへの自動コミットはしない。
-安全性を優先し、Phase 2でPR生成方式を導入する。
+現在は_inbox取り込み後、処理済みフォルダを`_uploaded/`へ退避する。
+単体の3Dデータを_inbox直下へ置いた場合も、自動でモデルフォルダを作成して取り込む。
 
 ### 26.5 公開前チェックUI
 
@@ -1303,13 +1310,14 @@ zip生成結果
 
 曖昧な場合は `Original` として本文を読むように表示する。
 
-### 27.4 GLBなしモデル
+### 27.4 サムネイルなしモデル
 
-GLBがないモデルは写真中心UIにする。
+cover/thumbnailがないモデルは3Dプレビューを主表示にする。
 
 ```text
-3D Preview unavailable
-Photos only
+3D Preview
+FBX > STEP/STP > STL
+Pointer hover rotation
 ```
 
 ただしエラー表示にはしない。
@@ -1415,7 +1423,7 @@ npm run normalize:model {slug} -- --apply
 完了条件。
 
 ```text
-_inbox/{slug}/ にSTLと画像だけ入れてdraftモデルが生成される
+_inbox/{slug}/ に3Dモデルと画像を入れてpublicモデルが生成される
 _inbox直下の単体3Dファイルは自動フォルダ化される
 _inbox直下の画像や説明ファイルはERRORになる
 dry-runで変更案が見える
@@ -1488,19 +1496,19 @@ secretらしき文字列を検出できる
 
 ```text
 _inboxアップロード検出
-GitHub Actionsによるimport dry-run
+GitHub Actionsによるimport dry-run/apply
 Job Summary表示
-import結果PR作成
-PRで差分確認
-merge後にdraft反映
+import結果をmainへ自動コミット
+処理済み_inboxを_uploadedへ退避
+publicとして反映
 ```
 
 完了条件。
 
 ```text
 GitHub Web UIだけで_inbox投入できる
-ActionsがPRを作る
-mainに直接自動コミットしない
+Actionsがimport結果をmainへコミットする
+処理済みフォルダが_uploadedへ移動する
 ```
 
 ## Phase 6: 検索・共有・拡張
@@ -1573,7 +1581,7 @@ WARNはJob Summaryに表示
 Phase 2完了条件。
 
 ```text
-_inbox/{slug}/ にSTLと画像だけ入れて下書き生成できる
+_inbox/{slug}/ に3Dモデルと画像を入れてpublic生成できる
 画像がphoto-001形式に整理される
 coverが自動生成される
 sourceへ配布元ファイルが移動される
@@ -1587,11 +1595,11 @@ dry-runとapplyが分かれている
 
 ```text
 1. _inbox/usb-a-cat/ を作る
-2. STLと画像を入れる
+2. 3Dモデルと画像を入れる
 3. import:inbox を実行
 4. usb-a-cat.md が自動生成される
 5. title/category/tags/license/unitを確認
-6. statusをpublicにする
+6. 非公開にしたい場合はstatusをdraftにする
 7. push
 8. GitHub Actionsが検証
 9. zip生成

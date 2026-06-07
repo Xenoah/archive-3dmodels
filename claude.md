@@ -45,3 +45,18 @@
 - STL preview update: 外部の model-viewer / Three.js に頼らず、`src/components/StlViewer.astro` で自前 WebGL STL プレビューを実装した。binary/ascii STL を fetch して直接 parse し、ドラッグ回転・ホイールズーム・Reset/Spin を提供する。
 - STL preview update: `source/*.stl` を `public/{slug}/source/` にコピーし、manifest の `assets.stlPreview` から詳細ページが表示する。CSP から `unpkg.com` を外し、通信先は self のみに戻した。
 - STL preview update: STL があるモデルでは `model.glb` 不在を警告しないようにした。GLB なしでも自前 STL preview が主経路になる。
+
+## 2026-06-07 current behavior
+
+- `_inbox` import now defaults new models to `status: public` and `license: "CC BY 4.0"`.
+- `created` and `uploaded` are written as `YYYY年MM月`. If `created` is not specified, import derives it from the primary 3D model file creation time, falling back to modified time.
+- Imported `_inbox/{slug}` folders are archived to `_uploaded/{slug}` after successful apply.
+- Uppercase alphabet characters are allowed in uploaded model folder names.
+- Standalone 3D files placed directly under `_inbox` are auto-foldered before import. Supported loose model extensions include `.fbx`, `.step`, `.stp`, `.stl`, `.3mf`, `.obj`, and `.glb`; loose non-model files remain errors.
+- Copilot-facing generated Markdown/TODO text asks for missing metadata completion, but Copilot does not run automatically unless invoked by GitHub/Copilot tooling.
+- The web 3D viewer is now `src/components/ModelViewer.astro` using Three.js. Viewer priority is FBX, STEP/STP, then STL.
+- STEP/STP support uses `occt-import-js`; `npm run generate` copies the required JS/WASM files into `public/vendor/occt-import-js/`.
+- Viewer UI includes a loading spinner, reset, spin, wire mesh, material style, and lighting style controls.
+- Model list cards show a 3D preview when no cover/thumbnail image exists. Pointer hover movement rotates the preview.
+- Draft models show a grey `DRAFT` badge on the upper-left of the thumbnail.
+- Expected verification warning: the built Three.js/FBX viewer chunk is larger than Vite's 500 kB warning threshold, but `npm run build` succeeds.
