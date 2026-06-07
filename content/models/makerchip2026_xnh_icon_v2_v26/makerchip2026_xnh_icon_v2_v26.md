@@ -5,7 +5,7 @@ category: "other"
 tags: []
 license: "Original"
 version: "0.1.0"
-status: "draft"
+status: "public"
 unit: "mm"
 commercial_use: false
 redistribution: false

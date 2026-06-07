@@ -1,6 +1,7 @@
 export const ROOT = process.cwd();
 export const CONTENT_MODELS_DIR = "content/models";
 export const INBOX_DIR = "_inbox";
+export const UPLOADED_DIR = "_uploaded";
 export const REPORTS_DIR = "reports";
 export const GENERATED_DATA_FILE = "src/data/models.generated.json";
 export const PUBLIC_DIR = "public";

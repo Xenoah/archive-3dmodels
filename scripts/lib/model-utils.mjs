@@ -280,7 +280,7 @@ export async function collectModels(report, options = {}) {
     if (sources.length === 0) report.warnings.push({ code: "empty-source", slug, message: `${slug}: source is empty.` });
     if (status === "draft") report.warnings.push({ code: "draft", slug, message: `${slug}: status is draft.` });
 
-    if (copyAssets && status !== "draft") {
+    if (copyAssets) {
       await copyPublicAssets(slug, { cover, preview, photos, sources });
     }
 

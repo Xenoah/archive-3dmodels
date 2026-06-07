@@ -3,11 +3,12 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 import models from "../data/models.generated.json";
 
 const publicModels = models.filter((model) => model.status === "public");
-const categories = [...new Set(publicModels.map((model) => model.category).filter(Boolean))].sort();
-const tags = [...new Set(publicModels.flatMap((model) => model.tags ?? []))].sort();
-const licenses = [...new Set(publicModels.map((model) => model.license).filter(Boolean))].sort();
+const listedModels = models.filter((model) => model.status === "public" || model.status === "draft");
+const categories = [...new Set(listedModels.map((model) => model.category).filter(Boolean))].sort();
+const tags = [...new Set(listedModels.flatMap((model) => model.tags ?? []))].sort();
+const licenses = [...new Set(listedModels.map((model) => model.license).filter(Boolean))].sort();
 const base = import.meta.env.BASE_URL.replace(/\/$/, "");
-const latest = publicModels.slice(0, 3);
+const latest = listedModels.slice(0, 3);
 ---
 
 <BaseLayout
@@ -44,7 +45,7 @@ const latest = publicModels.slice(0, 3);
       </div>
       <div class="latest-list">
         {latest.length === 0 ? (
-          <span>No public models yet</span>
+          <span>No models yet</span>
         ) : (
           latest.map((model) => <a href={`${base}/${model.slug}/`}>{model.title}</a>)
         )}
@@ -74,14 +75,14 @@ const latest = publicModels.slice(0, 3);
   </form>
 
   {
-    publicModels.length === 0 ? (
+    listedModels.length === 0 ? (
       <div class="empty">
-        <strong>No public models yet.</strong>
-        <p>Add a model under content/models and set status to public in Front Matter.</p>
+        <strong>No models yet.</strong>
+        <p>Add a model under content/models or import files from _inbox.</p>
       </div>
     ) : (
       <section class="model-grid" id="model-grid" aria-label="Model list">
-        {publicModels.map((model) => (
+        {listedModels.map((model) => (
           <a
             class="model-card"
             href={`${base}/${model.slug}/`}
@@ -94,6 +95,7 @@ const latest = publicModels.slice(0, 3);
             data-updated={model.updated || ""}
           >
             <div class="thumb">
+              {model.status === "draft" && <div class="draft-badge">DRAFT</div>}
               {model.assets.cover ? (
                 <img src={model.assets.cover} alt="" loading="lazy" />
               ) : (

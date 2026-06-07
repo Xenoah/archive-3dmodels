@@ -5,7 +5,7 @@ import models from "../data/models.generated.json";
 
 export function getStaticPaths() {
   return models
-    .filter((model) => model.status === "public" || model.status === "hidden")
+    .filter((model) => model.status === "public" || model.status === "draft" || model.status === "hidden")
     .map((model) => ({ params: { slug: model.slug }, props: { model } }));
 }
 
