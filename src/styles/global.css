@@ -193,6 +193,15 @@ select {
   letter-spacing: 0;
 }
 
+.creator-kicker {
+  color: var(--accent-strong);
+  font-size: 0.82rem;
+  font-weight: 900;
+  letter-spacing: 0;
+  margin-bottom: 12px;
+  text-transform: uppercase;
+}
+
 .intro p {
   max-width: 660px;
   color: var(--muted);
@@ -652,6 +661,21 @@ select {
   margin: 0 0 14px;
 }
 
+.creator-line {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid color-mix(in srgb, var(--accent), var(--line) 62%);
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  font-size: 0.86rem;
+  font-weight: 800;
+  margin: 0 0 14px;
+  min-height: 32px;
+  padding: 0 12px;
+}
+
 .action-strip {
   display: flex;
   flex-wrap: wrap;
@@ -682,6 +706,71 @@ select {
 
 .download-box dd,
 .spec-list dd {
+  margin: 0;
+}
+
+.notice-scrollbox {
+  border: 1px solid color-mix(in srgb, var(--accent), var(--line) 55%);
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.74)),
+    var(--surface-soft);
+  color: var(--text);
+  display: grid;
+  gap: 18px;
+  line-height: 1.75;
+  margin: 16px 0;
+  max-height: 280px;
+  overflow: auto;
+  padding: 16px;
+  scroll-padding: 16px;
+}
+
+.notice-scrollbox:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.notice-lang-block {
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 16px;
+}
+
+.notice-lang-block:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.notice-lang-block h3 {
+  color: var(--accent-strong);
+  font-size: 1rem;
+  margin: 0 0 8px;
+}
+
+.notice-lang-block p {
+  margin: 0 0 12px;
+}
+
+.notice-lang-block p:last-child {
+  margin-bottom: 0;
+}
+
+.license-list {
+  display: grid;
+  grid-template-columns: minmax(150px, max-content) 1fr;
+  gap: 10px 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.72);
+  padding: 16px;
+}
+
+.license-list dt {
+  color: var(--accent-strong);
+  font-weight: 800;
+}
+
+.license-list dd {
   margin: 0;
 }
 
@@ -834,6 +923,10 @@ select {
 
   .gallery {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .license-list {
+    grid-template-columns: 1fr;
   }
 
   .related-grid {

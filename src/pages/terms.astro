@@ -14,10 +14,10 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, "");
     <div>
       <h1 data-lang-ja="規約" data-lang-en="Terms">規約</h1>
       <p
-        data-lang-ja="ライセンス、商用利用、改変、再配布、クレジット要件は各モデルページの表示を正とします。Original ライセンスの場合はモデル本文の注記も確認してください。"
-        data-lang-en="Each model page is the source of truth for license, commercial use, modification, redistribution, and credit requirements. For Original licenses, read the model notes too."
+        data-lang-ja="このアーカイブは Xenoah が制作・配布する3Dモデルのためのページです。ライセンス、商用利用、改変、再配布、クレジット要件は各モデルページの表示を正とします。Original ライセンスの場合はモデル本文の注記も確認してください。"
+        data-lang-en="This archive is for 3D models created and distributed by Xenoah. Each model page is the source of truth for license, commercial use, modification, redistribution, and credit requirements. For Original licenses, read the model notes too."
       >
-        ライセンス、商用利用、改変、再配布、クレジット要件は各モデルページの表示を正とします。Original ライセンスの場合はモデル本文の注記も確認してください。
+        このアーカイブは Xenoah が制作・配布する3Dモデルのためのページです。ライセンス、商用利用、改変、再配布、クレジット要件は各モデルページの表示を正とします。Original ライセンスの場合はモデル本文の注記も確認してください。
       </p>
     </div>
   </section>
@@ -36,5 +36,34 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, "");
     >
       下書きモデルは一覧、詳細ページ、ZIP生成から除外されます。
     </p>
+    <h2 data-lang-ja="作者と免責" data-lang-en="Creator and Disclaimer">作者と免責</h2>
+    <p
+      data-lang-ja="このアーカイブの作者は Xenoah です。各モデルおよび同梱ファイルは現状有姿で提供され、完全性、正確性、安全性、特定用途への適合性、利用環境での動作や造形結果を保証しません。利用によって生じた損害、事故、不具合、トラブルについて、作者 Xenoah は責任を負いません。"
+      data-lang-en="The creator of this archive is Xenoah. Each model and bundled file is provided as-is, without warranty of completeness, accuracy, safety, fitness for a particular purpose, or successful operation or printing in your environment. Xenoah is not responsible for damages, accidents, defects, failures, or other trouble caused by use."
+    >
+      このアーカイブの作者は Xenoah です。各モデルおよび同梱ファイルは現状有姿で提供され、完全性、正確性、安全性、特定用途への適合性、利用環境での動作や造形結果を保証しません。利用によって生じた損害、事故、不具合、トラブルについて、作者 Xenoah は責任を負いません。
+    </p>
+    <h2 data-lang-ja="利用ライブラリとライセンス" data-lang-en="Libraries and Licenses">利用ライブラリとライセンス</h2>
+    <p
+      data-lang-ja="このサイトの表示・生成・3Dプレビューには以下の主要ライブラリを使用しています。各ライブラリの著作権およびライセンスはそれぞれの配布元に従います。"
+      data-lang-en="This site uses the following primary libraries for rendering, generation, and 3D previews. Copyright and license terms for each library belong to their respective projects."
+    >
+      このサイトの表示・生成・3Dプレビューには以下の主要ライブラリを使用しています。各ライブラリの著作権およびライセンスはそれぞれの配布元に従います。
+    </p>
+    <dl class="license-list">
+      <dt>Astro</dt>
+      <dd>MIT License</dd>
+      <dt>three.js</dt>
+      <dd>MIT License</dd>
+      <dt>occt-import-js</dt>
+      <dd>LGPL-2.1</dd>
+      <dt>Google tag / Google Analytics</dt>
+      <dd
+        data-lang-ja="アクセス解析のために使用しています。Google の各種規約・ポリシーに従います。"
+        data-lang-en="Used for analytics and governed by Google's applicable terms and policies."
+      >
+        アクセス解析のために使用しています。Google の各種規約・ポリシーに従います。
+      </dd>
+    </dl>
   </section>
 </BaseLayout>

@@ -58,9 +58,13 @@ const relatedModels = models
       }
     </div>
 
-    <div class="detail-panel">
+      <div class="detail-panel">
       <div class="panel-topline" data-lang-ja="モデル詳細" data-lang-en="Model Detail">モデル詳細</div>
       <h1>{model.title}</h1>
+      <div class="creator-line">
+        <span data-lang-ja="作者" data-lang-en="Creator">作者</span>
+        <strong>Xenoah</strong>
+      </div>
       {model.summary ? (
         <p class="summary">{model.summary}</p>
       ) : (
@@ -81,8 +85,8 @@ const relatedModels = models
         data-lang-aria-label-ja="モデル操作"
         data-lang-aria-label-en="Model actions"
       >
-        <a class="button" href={model.assets.download || "#"} aria-disabled={model.assets.download ? "false" : "true"}>
-          <span data-lang-ja="ZIPをダウンロード" data-lang-en="Download ZIP">ZIPをダウンロード</span>
+        <a class="button" href="#download-notice" aria-disabled={model.assets.download ? "false" : "true"}>
+          <span data-lang-ja="注意事項を確認してダウンロード" data-lang-en="Read notice and download">注意事項を確認してダウンロード</span>
         </a>
         <a class="ghost-button" href="#details" data-lang-ja="詳細" data-lang-en="Details">詳細</a>
         <a class="ghost-button" href="#description-title" data-lang-ja="説明" data-lang-en="Description">説明</a>
@@ -90,6 +94,9 @@ const relatedModels = models
 
       <section class="download-box" aria-labelledby="download-title">
         <h2 id="download-title" data-lang-ja="ダウンロード" data-lang-en="Download">ダウンロード</h2>
+        <p class="summary">
+          <span data-lang-ja="作者:" data-lang-en="Creator:">作者:</span> <strong>Xenoah</strong>
+        </p>
         <dl>
           <dt data-lang-ja="ライセンス" data-lang-en="License">ライセンス</dt>
           <dd>{model.license}</dd>
@@ -171,15 +178,47 @@ const relatedModels = models
     </section>
   )}
 
-  <section class="download-box section" aria-labelledby="download-bottom-title">
+  <section class="download-box section" id="download-notice" aria-labelledby="download-bottom-title">
     <h2 id="download-bottom-title" data-lang-ja="ZIPをダウンロード" data-lang-en="Download ZIP">ZIPをダウンロード</h2>
     <p
       class="summary"
-      data-lang-ja="ダウンロード前にライセンス条件と注記を確認してください。"
-      data-lang-en="Check the license conditions and notes before downloading."
+      data-lang-ja="ダウンロード前にライセンス条件、注意事項、免責事項を確認してください。"
+      data-lang-en="Review the license conditions, notices, and disclaimer before downloading."
     >
-      ダウンロード前にライセンス条件と注記を確認してください。
+      ダウンロード前にライセンス条件、注意事項、免責事項を確認してください。
     </p>
+    <div class="notice-scrollbox" tabindex="0" role="region" aria-label="Download notice">
+      <div class="notice-lang-block">
+        <h3>日本語</h3>
+        <p>
+          この3Dモデルおよび同梱ファイルは、作者 Xenoah が可能な範囲で確認したうえで配布していますが、
+          完全性、正確性、安全性、特定用途への適合性、各環境での動作や造形結果を保証するものではありません。
+        </p>
+        <p>
+          ダウンロード、加工、印刷、組み立て、使用、再配布、商用利用などは、各モデルページに記載されたライセンス条件と注意事項を確認したうえで、利用者自身の判断と責任で行ってください。
+          3Dプリンタ、工具、材料、電子機器、取り付け対象物、周辺機器、人体、財産、データ、業務、第三者との関係に生じた損害、事故、不具合、トラブルについて、作者 Xenoah は責任を負いません。
+        </p>
+        <p>
+          寸法、強度、耐熱性、絶縁性、耐荷重、固定方法、安全性が必要な用途では、必ず利用者自身で検証し、必要に応じて専門家に確認してください。
+          法令、規格、メーカー保証、第三者の権利に反しないことも利用者自身で確認してください。
+        </p>
+      </div>
+      <div class="notice-lang-block">
+        <h3>English</h3>
+        <p>
+          These 3D models and bundled files are provided by Xenoah after reasonable checks, but they are provided as-is.
+          Xenoah does not warrant completeness, accuracy, safety, fitness for a particular purpose, or successful operation, printing, assembly, or use in every environment.
+        </p>
+        <p>
+          Downloading, modifying, printing, assembling, using, redistributing, or commercially using the files is done at your own discretion and responsibility after reviewing the license terms and notes on each model page.
+          Xenoah is not responsible for any damage, accident, defect, failure, loss, dispute, or other trouble involving 3D printers, tools, materials, electronics, mounted objects, peripherals, people, property, data, business, or third parties.
+        </p>
+        <p>
+          For uses that require dimensional accuracy, strength, heat resistance, insulation, load capacity, mounting reliability, or safety, you must verify suitability yourself and consult a qualified professional if needed.
+          You are also responsible for ensuring that your use does not violate laws, standards, manufacturer warranties, or third-party rights.
+        </p>
+      </div>
+    </div>
     <a class="button" href={model.assets.download || "#"} aria-disabled={model.assets.download ? "false" : "true"}>
       <span data-lang-ja="ZIPをダウンロード" data-lang-en="Download ZIP">ZIPをダウンロード</span>
     </a>
