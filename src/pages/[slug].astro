@@ -11,8 +11,10 @@ export function getStaticPaths() {
 
 const { model } = Astro.props;
 const base = import.meta.env.BASE_URL.replace(/\/$/, "");
-const credit = model.credit_required === true ? "Required" : model.credit_required === false ? "Not required" : "Check notes";
-const boolLabel = (value) => (value === true ? "Allowed" : value === false ? "Not allowed" : "Check notes");
+const creditJa = model.credit_required === true ? "必要" : model.credit_required === false ? "不要" : "注記を確認";
+const creditEn = model.credit_required === true ? "Required" : model.credit_required === false ? "Not required" : "Check notes";
+const boolLabelJa = (value) => (value === true ? "許可" : value === false ? "不可" : "注記を確認");
+const boolLabelEn = (value) => (value === true ? "Allowed" : value === false ? "Not allowed" : "Check notes");
 const relatedModels = models
   .filter((item) => item.status === "public" && item.slug !== model.slug)
   .map((item) => {
@@ -26,11 +28,13 @@ const relatedModels = models
 ---
 
 <BaseLayout
-  title={`${model.title} | 3D Models`}
-  description={model.summary || `${model.title} download page`}
+  title={`${model.title} | 3Dモデル`}
+  titleEn={`${model.title} | 3D Models`}
+  description={model.summary || `${model.title} のダウンロードページです。`}
+  descriptionEn={model.summary || `${model.title} download page`}
   image={model.assets.cover || ""}
 >
-  <a class="ghost-button" href={`${base}/`}>Back to models</a>
+  <a class="ghost-button" href={`${base}/`} data-lang-ja="モデル一覧へ戻る" data-lang-en="Back to models">モデル一覧へ戻る</a>
 
   <section class="detail-hero">
     <div class="viewer">
@@ -47,7 +51,7 @@ const relatedModels = models
                 <span></span>
                 <span></span>
               </div>
-              <strong>STL Source</strong>
+              <strong data-lang-ja="STLソース" data-lang-en="STL Source">STLソース</strong>
             </div>
           </div>
         )
@@ -55,39 +59,48 @@ const relatedModels = models
     </div>
 
     <div class="detail-panel">
-      <div class="panel-topline">Model Detail</div>
+      <div class="panel-topline" data-lang-ja="モデル詳細" data-lang-en="Model Detail">モデル詳細</div>
       <h1>{model.title}</h1>
-      <p class="summary">{model.summary || "No summary provided."}</p>
+      {model.summary ? (
+        <p class="summary">{model.summary}</p>
+      ) : (
+        <p class="summary" data-lang-ja="概要はまだありません。" data-lang-en="No summary provided.">概要はまだありません。</p>
+      )}
       <div class="meta-row">
         <span class="pill">{model.category}</span>
         <span class="pill">{model.license}</span>
-        <span class="pill">unit: {model.unit}</span>
+        <span class="pill"><span data-lang-ja="単位:" data-lang-en="unit:">単位:</span> {model.unit}</span>
         {model.version && <span class="pill">v{model.version}</span>}
-        {model.created && <span class="pill">created: {model.created}</span>}
-        {model.uploaded && <span class="pill">uploaded: {model.uploaded}</span>}
+        {model.created && <span class="pill"><span data-lang-ja="作成:" data-lang-en="created:">作成:</span> {model.created}</span>}
+        {model.uploaded && <span class="pill"><span data-lang-ja="アップロード:" data-lang-en="uploaded:">アップロード:</span> {model.uploaded}</span>}
       </div>
 
-      <div class="action-strip" aria-label="Model actions">
+      <div
+        class="action-strip"
+        aria-label="モデル操作"
+        data-lang-aria-label-ja="モデル操作"
+        data-lang-aria-label-en="Model actions"
+      >
         <a class="button" href={model.assets.download || "#"} aria-disabled={model.assets.download ? "false" : "true"}>
-          Download ZIP
+          <span data-lang-ja="ZIPをダウンロード" data-lang-en="Download ZIP">ZIPをダウンロード</span>
         </a>
-        <a class="ghost-button" href="#details">Details</a>
-        <a class="ghost-button" href="#description-title">Description</a>
+        <a class="ghost-button" href="#details" data-lang-ja="詳細" data-lang-en="Details">詳細</a>
+        <a class="ghost-button" href="#description-title" data-lang-ja="説明" data-lang-en="Description">説明</a>
       </div>
 
       <section class="download-box" aria-labelledby="download-title">
-        <h2 id="download-title">Download</h2>
+        <h2 id="download-title" data-lang-ja="ダウンロード" data-lang-en="Download">ダウンロード</h2>
         <dl>
-          <dt>License</dt>
+          <dt data-lang-ja="ライセンス" data-lang-en="License">ライセンス</dt>
           <dd>{model.license}</dd>
-          <dt>Commercial use</dt>
-          <dd>{boolLabel(model.commercial_use)}</dd>
-          <dt>Modification</dt>
-          <dd>{boolLabel(model.modification)}</dd>
-          <dt>Redistribution</dt>
-          <dd>{boolLabel(model.redistribution)}</dd>
-          <dt>Credit</dt>
-          <dd>{credit}</dd>
+          <dt data-lang-ja="商用利用" data-lang-en="Commercial use">商用利用</dt>
+          <dd data-lang-ja={boolLabelJa(model.commercial_use)} data-lang-en={boolLabelEn(model.commercial_use)}>{boolLabelJa(model.commercial_use)}</dd>
+          <dt data-lang-ja="改変" data-lang-en="Modification">改変</dt>
+          <dd data-lang-ja={boolLabelJa(model.modification)} data-lang-en={boolLabelEn(model.modification)}>{boolLabelJa(model.modification)}</dd>
+          <dt data-lang-ja="再配布" data-lang-en="Redistribution">再配布</dt>
+          <dd data-lang-ja={boolLabelJa(model.redistribution)} data-lang-en={boolLabelEn(model.redistribution)}>{boolLabelJa(model.redistribution)}</dd>
+          <dt data-lang-ja="クレジット" data-lang-en="Credit">クレジット</dt>
+          <dd data-lang-ja={creditJa} data-lang-en={creditEn}>{creditJa}</dd>
         </dl>
       </section>
     </div>
@@ -95,7 +108,7 @@ const relatedModels = models
 
   {model.assets.photos.length > 0 && (
     <section class="section" aria-labelledby="photos-title">
-      <h2 id="photos-title">Photos</h2>
+      <h2 id="photos-title" data-lang-ja="写真" data-lang-en="Photos">写真</h2>
       <div class="gallery">
         {model.assets.photos.map((photo) => <img src={photo} alt="" loading="lazy" />)}
       </div>
@@ -103,32 +116,36 @@ const relatedModels = models
   )}
 
   <section class="section" aria-labelledby="description-title">
-    <h2 id="description-title">Description</h2>
+    <h2 id="description-title" data-lang-ja="説明" data-lang-en="Description">説明</h2>
     <article class="markdown" set:html={model.bodyHtml} />
   </section>
 
   <section class="section" id="details" aria-labelledby="spec-title">
-    <h2 id="spec-title">Details</h2>
+    <h2 id="spec-title" data-lang-ja="詳細" data-lang-en="Details">詳細</h2>
     <dl class="spec-list">
       <dt>Slug</dt>
       <dd>{model.slug}</dd>
-      <dt>Category</dt>
+      <dt data-lang-ja="カテゴリ" data-lang-en="Category">カテゴリ</dt>
       <dd>{model.category}</dd>
-      <dt>Tags</dt>
-      <dd>{(model.tags ?? []).join(", ") || "None"}</dd>
-      <dt>Unit</dt>
+      <dt data-lang-ja="タグ" data-lang-en="Tags">タグ</dt>
+      {(model.tags ?? []).length > 0 ? (
+        <dd>{(model.tags ?? []).join(", ")}</dd>
+      ) : (
+        <dd data-lang-ja="なし" data-lang-en="None">なし</dd>
+      )}
+      <dt data-lang-ja="単位" data-lang-en="Unit">単位</dt>
       <dd>{model.unit}</dd>
-      <dt>Scale</dt>
-      <dd>{model.scale || "unspecified"}</dd>
-      <dt>Created</dt>
-      <dd>{model.created || "unspecified"}</dd>
-      <dt>Uploaded</dt>
-      <dd>{model.uploaded || "unspecified"}</dd>
-      <dt>Source files</dt>
+      <dt data-lang-ja="スケール" data-lang-en="Scale">スケール</dt>
+      {model.scale ? <dd>{model.scale}</dd> : <dd data-lang-ja="未指定" data-lang-en="unspecified">未指定</dd>}
+      <dt data-lang-ja="作成日" data-lang-en="Created">作成日</dt>
+      {model.created ? <dd>{model.created}</dd> : <dd data-lang-ja="未指定" data-lang-en="unspecified">未指定</dd>}
+      <dt data-lang-ja="アップロード日" data-lang-en="Uploaded">アップロード日</dt>
+      {model.uploaded ? <dd>{model.uploaded}</dd> : <dd data-lang-ja="未指定" data-lang-en="unspecified">未指定</dd>}
+      <dt data-lang-ja="ソースファイル" data-lang-en="Source files">ソースファイル</dt>
       <dd>{model.sourceCount}</dd>
       {model.assets.sources?.length > 0 && (
         <>
-          <dt>Source list</dt>
+          <dt data-lang-ja="ソース一覧" data-lang-en="Source list">ソース一覧</dt>
           <dd>
             {model.assets.sources.map((source) => (
               <a href={source.url}>{source.name}</a>
@@ -141,7 +158,7 @@ const relatedModels = models
 
   {relatedModels.length > 0 && (
     <section class="section" aria-labelledby="related-title">
-      <h2 id="related-title">Related Models</h2>
+      <h2 id="related-title" data-lang-ja="関連モデル" data-lang-en="Related Models">関連モデル</h2>
       <div class="related-grid">
         {relatedModels.map((item) => (
           <a class="related-card" href={`${base}/${item.slug}/`}>
@@ -155,10 +172,16 @@ const relatedModels = models
   )}
 
   <section class="download-box section" aria-labelledby="download-bottom-title">
-    <h2 id="download-bottom-title">Download ZIP</h2>
-    <p class="summary">Check the license conditions and notes before downloading.</p>
+    <h2 id="download-bottom-title" data-lang-ja="ZIPをダウンロード" data-lang-en="Download ZIP">ZIPをダウンロード</h2>
+    <p
+      class="summary"
+      data-lang-ja="ダウンロード前にライセンス条件と注記を確認してください。"
+      data-lang-en="Check the license conditions and notes before downloading."
+    >
+      ダウンロード前にライセンス条件と注記を確認してください。
+    </p>
     <a class="button" href={model.assets.download || "#"} aria-disabled={model.assets.download ? "false" : "true"}>
-      Download ZIP
+      <span data-lang-ja="ZIPをダウンロード" data-lang-en="Download ZIP">ZIPをダウンロード</span>
     </a>
   </section>
 </BaseLayout>

@@ -13,40 +13,49 @@ const latest = listedModels.slice(0, 3);
 ---
 
 <BaseLayout
-  title="3D Models"
-  description="Browse downloadable 3D models by category, tag, and license."
+  title="3Dモデル"
+  titleEn="3D Models"
+  description="カテゴリ、タグ、ライセンスからダウンロード可能な3Dモデルを探せます。"
+  descriptionEn="Browse downloadable 3D models by category, tag, and license."
 >
   <section class="intro" aria-labelledby="page-title">
     <div>
-      <h1 id="page-title">3D Models</h1>
-      <p>
-        A lightweight static archive for downloadable 3D model files. Pages, metadata,
-        galleries, and ZIP downloads are generated from Markdown and source folders.
+      <h1 id="page-title" data-lang-ja="3Dモデル" data-lang-en="3D Models">3Dモデル</h1>
+      <p
+        data-lang-ja="ダウンロード可能な3Dモデルファイルの軽量な静的アーカイブです。ページ、メタデータ、ギャラリー、ZIPダウンロードは Markdown とソースフォルダから生成されます。"
+        data-lang-en="A lightweight static archive for downloadable 3D model files. Pages, metadata, galleries, and ZIP downloads are generated from Markdown and source folders."
+      >
+        ダウンロード可能な3Dモデルファイルの軽量な静的アーカイブです。ページ、メタデータ、ギャラリー、ZIPダウンロードは Markdown とソースフォルダから生成されます。
       </p>
       <div class="hero-actions">
-        <a class="button" href="#model-grid">Browse models</a>
-        <a class="ghost-button" href={`${base}/terms/`}>License terms</a>
+        <a class="button" href="#model-grid" data-lang-ja="モデルを見る" data-lang-en="Browse models">モデルを見る</a>
+        <a class="ghost-button" href={`${base}/terms/`} data-lang-ja="ライセンス規約" data-lang-en="License terms">ライセンス規約</a>
       </div>
     </div>
-    <aside class="hero-panel" aria-label="Archive summary">
-      <div class="panel-topline">Archive Status</div>
+    <aside
+      class="hero-panel"
+      aria-label="アーカイブ概要"
+      data-lang-aria-label-ja="アーカイブ概要"
+      data-lang-aria-label-en="Archive summary"
+    >
+      <div class="panel-topline" data-lang-ja="アーカイブ状況" data-lang-en="Archive Status">アーカイブ状況</div>
       <div class="stats">
         <div class="stat">
           <strong>{publicModels.length}</strong>
-          <span>Public</span>
+          <span data-lang-ja="公開中" data-lang-en="Public">公開中</span>
         </div>
         <div class="stat">
           <strong>{categories.length}</strong>
-          <span>Categories</span>
+          <span data-lang-ja="カテゴリ" data-lang-en="Categories">カテゴリ</span>
         </div>
         <div class="stat">
           <strong>{tags.length}</strong>
-          <span>Tags</span>
+          <span data-lang-ja="タグ" data-lang-en="Tags">タグ</span>
         </div>
       </div>
       <div class="latest-list">
         {latest.length === 0 ? (
-          <span>No models yet</span>
+          <span data-lang-ja="モデルはまだありません" data-lang-en="No models yet">モデルはまだありません</span>
         ) : (
           latest.map((model) => <a href={`${base}/${model.slug}/`}>{model.title}</a>)
         )}
@@ -55,35 +64,55 @@ const latest = listedModels.slice(0, 3);
   </section>
 
   <form class="toolbar" id="model-filter" role="search">
-    <input id="q" type="search" placeholder="Search title, summary, tag" aria-label="Keyword search" />
-    <select id="category" aria-label="Category">
-      <option value="">All categories</option>
+    <input
+      id="q"
+      type="search"
+      placeholder="タイトル、概要、タグで検索"
+      aria-label="キーワード検索"
+      data-lang-placeholder-ja="タイトル、概要、タグで検索"
+      data-lang-placeholder-en="Search title, summary, tag"
+      data-lang-aria-label-ja="キーワード検索"
+      data-lang-aria-label-en="Keyword search"
+    />
+    <select id="category" aria-label="カテゴリ" data-lang-aria-label-ja="カテゴリ" data-lang-aria-label-en="Category">
+      <option value="" data-lang-ja="すべてのカテゴリ" data-lang-en="All categories">すべてのカテゴリ</option>
       {categories.map((category) => <option value={category}>{category}</option>)}
     </select>
-    <select id="tag" aria-label="Tag">
-      <option value="">All tags</option>
+    <select id="tag" aria-label="タグ" data-lang-aria-label-ja="タグ" data-lang-aria-label-en="Tag">
+      <option value="" data-lang-ja="すべてのタグ" data-lang-en="All tags">すべてのタグ</option>
       {tags.map((tag) => <option value={tag}>{tag}</option>)}
     </select>
-    <select id="license" aria-label="License">
-      <option value="">All licenses</option>
+    <select id="license" aria-label="ライセンス" data-lang-aria-label-ja="ライセンス" data-lang-aria-label-en="License">
+      <option value="" data-lang-ja="すべてのライセンス" data-lang-en="All licenses">すべてのライセンス</option>
       {licenses.map((license) => <option value={license}>{license}</option>)}
     </select>
-    <select id="sort" aria-label="Sort order">
-      <option value="updated-desc">Newest first</option>
-      <option value="created-desc">Created newest</option>
-      <option value="title-asc">Name A-Z</option>
-      <option value="category-asc">Category</option>
+    <select id="sort" aria-label="並び順" data-lang-aria-label-ja="並び順" data-lang-aria-label-en="Sort order">
+      <option value="updated-desc" data-lang-ja="更新が新しい順" data-lang-en="Newest first">更新が新しい順</option>
+      <option value="created-desc" data-lang-ja="作成が新しい順" data-lang-en="Created newest">作成が新しい順</option>
+      <option value="title-asc" data-lang-ja="名前 A-Z" data-lang-en="Name A-Z">名前 A-Z</option>
+      <option value="category-asc" data-lang-ja="カテゴリ" data-lang-en="Category">カテゴリ</option>
     </select>
   </form>
 
   {
     listedModels.length === 0 ? (
       <div class="empty">
-        <strong>No models yet.</strong>
-        <p>Add a model under content/models or import files from _inbox.</p>
+        <strong data-lang-ja="モデルはまだありません。" data-lang-en="No models yet.">モデルはまだありません。</strong>
+        <p
+          data-lang-ja="content/models にモデルを追加するか、_inbox からファイルをインポートしてください。"
+          data-lang-en="Add a model under content/models or import files from _inbox."
+        >
+          content/models にモデルを追加するか、_inbox からファイルをインポートしてください。
+        </p>
       </div>
     ) : (
-      <section class="model-grid" id="model-grid" aria-label="Model list">
+      <section
+        class="model-grid"
+        id="model-grid"
+        aria-label="モデル一覧"
+        data-lang-aria-label-ja="モデル一覧"
+        data-lang-aria-label-en="Model list"
+      >
         {listedModels.map((model) => (
           <a
             class="model-card"
@@ -117,13 +146,21 @@ const latest = listedModels.slice(0, 3);
             <div class="card-body">
               <div>
                 <h2>{model.title}</h2>
-                <p class="summary">{model.summary || "No summary provided."}</p>
+                {model.summary ? (
+                  <p class="summary">{model.summary}</p>
+                ) : (
+                  <p class="summary" data-lang-ja="概要はまだありません。" data-lang-en="No summary provided.">概要はまだありません。</p>
+                )}
               </div>
               <div class="meta-row">
                 <span class="pill">{model.category}</span>
                 <span class="pill">{model.license}</span>
-                {model.created && <span class="pill">created: {model.created}</span>}
-                {model.updated && model.updated !== model.created && <span class="pill">updated: {model.updated}</span>}
+                {model.created && (
+                  <span class="pill"><span data-lang-ja="作成:" data-lang-en="created:">作成:</span> {model.created}</span>
+                )}
+                {model.updated && model.updated !== model.created && (
+                  <span class="pill"><span data-lang-ja="更新:" data-lang-en="updated:">更新:</span> {model.updated}</span>
+                )}
               </div>
               <div class="tag-row">
                 {(model.tags ?? []).slice(0, 5).map((tag) => <span class="pill">#{tag}</span>)}

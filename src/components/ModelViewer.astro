@@ -1,5 +1,5 @@
 ---
-const { source, title = "3D preview", variant = "detail" } = Astro.props;
+const { source, title = "3Dプレビュー", variant = "detail" } = Astro.props;
 const base = import.meta.env.BASE_URL.replace(/\/$/, "");
 const isThumbnail = variant === "thumbnail";
 ---
@@ -11,30 +11,58 @@ const isThumbnail = variant === "thumbnail";
   data-model-name={source.name}
   data-occt-base={`${base}/vendor/occt-import-js`}
   data-viewer-variant={variant}
+  data-viewer-status="loading"
 >
   <canvas aria-label={title}></canvas>
   <div class="model-viewer-loading" aria-hidden="true"></div>
   {
     isThumbnail ? (
-      <span class="model-viewer-status compact">Loading {source.type.toUpperCase()}</span>
+      <span
+        class="model-viewer-status compact"
+        data-lang-ja={`${source.type.toUpperCase()} を読み込み中`}
+        data-lang-en={`Loading ${source.type.toUpperCase()}`}
+      >
+        {source.type.toUpperCase()} を読み込み中
+      </span>
     ) : (
       <div class="model-viewer-ui">
-        <span class="model-viewer-status">Loading {source.type.toUpperCase()}</span>
-        <div class="model-viewer-controls" aria-label="3D preview controls">
-          <button type="button" data-action="reset">Reset</button>
-          <button type="button" data-action="spin">Spin</button>
-          <button type="button" data-action="wire">Wire</button>
-          <select data-setting="material" aria-label="Material style">
-            <option value="original">Original</option>
-            <option value="clay">Clay</option>
-            <option value="metal">Metal</option>
-            <option value="plastic">Plastic</option>
+        <span
+          class="model-viewer-status"
+          data-lang-ja={`${source.type.toUpperCase()} を読み込み中`}
+          data-lang-en={`Loading ${source.type.toUpperCase()}`}
+        >
+          {source.type.toUpperCase()} を読み込み中
+        </span>
+        <div
+          class="model-viewer-controls"
+          aria-label="3Dプレビュー操作"
+          data-lang-aria-label-ja="3Dプレビュー操作"
+          data-lang-aria-label-en="3D preview controls"
+        >
+          <button type="button" data-action="reset" data-lang-ja="リセット" data-lang-en="Reset">リセット</button>
+          <button type="button" data-action="spin" data-lang-ja="回転" data-lang-en="Spin">回転</button>
+          <button type="button" data-action="wire" data-lang-ja="ワイヤー" data-lang-en="Wire">ワイヤー</button>
+          <select
+            data-setting="material"
+            aria-label="マテリアル"
+            data-lang-aria-label-ja="マテリアル"
+            data-lang-aria-label-en="Material style"
+          >
+            <option value="original" data-lang-ja="オリジナル" data-lang-en="Original">オリジナル</option>
+            <option value="clay" data-lang-ja="クレイ" data-lang-en="Clay">クレイ</option>
+            <option value="metal" data-lang-ja="金属" data-lang-en="Metal">金属</option>
+            <option value="plastic" data-lang-ja="プラスチック" data-lang-en="Plastic">プラスチック</option>
           </select>
-          <select data-setting="lighting" aria-label="Lighting style">
-            <option value="studio">Studio</option>
-            <option value="soft">Soft</option>
-            <option value="front">Front</option>
-            <option value="high">High</option>
+          <select
+            data-setting="lighting"
+            aria-label="ライティング"
+            data-lang-aria-label-ja="ライティング"
+            data-lang-aria-label-en="Lighting style"
+          >
+            <option value="studio" data-lang-ja="スタジオ" data-lang-en="Studio">スタジオ</option>
+            <option value="soft" data-lang-ja="ソフト" data-lang-en="Soft">ソフト</option>
+            <option value="front" data-lang-ja="正面" data-lang-en="Front">正面</option>
+            <option value="high" data-lang-ja="ハイ" data-lang-en="High">ハイ</option>
           </select>
         </div>
       </div>
@@ -50,6 +78,33 @@ const isThumbnail = variant === "thumbnail";
 
   const initialized = new WeakSet();
   let occtPromise = null;
+
+  function currentLanguage() {
+    return window.archiveLanguage?.get?.() === "en" ? "en" : "ja";
+  }
+
+  function modelViewerText(status, type) {
+    const upperType = (type || "3D").toUpperCase();
+    const labels = {
+      ja: {
+        loading: `${upperType} を読み込み中`,
+        preview: `${upperType} プレビュー`,
+        failed: "プレビューに失敗しました"
+      },
+      en: {
+        loading: `Loading ${upperType}`,
+        preview: `${upperType} preview`,
+        failed: "Preview failed"
+      }
+    };
+    return labels[currentLanguage()][status] ?? labels[currentLanguage()].preview;
+  }
+
+  function updateViewerStatus(root) {
+    const status = root.querySelector(".model-viewer-status");
+    if (!status) return;
+    status.textContent = modelViewerText(root.dataset.viewerStatus, root.dataset.modelType);
+  }
 
   class ArchiveModelViewer {
     constructor(root) {
@@ -67,6 +122,7 @@ const isThumbnail = variant === "thumbnail";
       this.lightingMode = "studio";
       this.hoverRotation = null;
       this.meshes = [];
+      window.addEventListener("archive-language-change", () => updateViewerStatus(this.root));
     }
 
     async start() {
@@ -79,7 +135,7 @@ const isThumbnail = variant === "thumbnail";
       this.applyMaterial();
       this.applyLighting();
       this.fitCamera(object);
-      this.status.textContent = `${this.type.toUpperCase()} preview`;
+      this.setStatus("preview");
       this.root.classList.add("is-loaded");
       this.renderer.setAnimationLoop(() => this.draw());
     }
@@ -148,7 +204,7 @@ const isThumbnail = variant === "thumbnail";
     }
 
     loadFbx() {
-      this.status.textContent = "Loading FBX";
+      this.setStatus("loading");
       const loader = new FBXLoader();
       const resourcePath = this.src.slice(0, this.src.lastIndexOf("/") + 1);
       loader.setResourcePath(resourcePath);
@@ -158,7 +214,7 @@ const isThumbnail = variant === "thumbnail";
     }
 
     loadStl() {
-      this.status.textContent = "Loading STL";
+      this.setStatus("loading");
       const loader = new STLLoader();
       return new Promise((resolve, reject) => {
         loader.load(
@@ -179,7 +235,7 @@ const isThumbnail = variant === "thumbnail";
     }
 
     async loadStep() {
-      this.status.textContent = "Loading STEP";
+      this.setStatus("loading");
       const occt = await loadOcct(this.occtBase);
       const response = await fetch(this.src);
       if (!response.ok) throw new Error(`Failed to fetch STEP: ${response.status}`);
@@ -287,6 +343,11 @@ const isThumbnail = variant === "thumbnail";
       }
       this.renderer.render(this.scene, this.camera);
     }
+
+    setStatus(status) {
+      this.root.dataset.viewerStatus = status;
+      updateViewerStatus(this.root);
+    }
   }
 
   function buildStepMesh(resultMesh) {
@@ -337,7 +398,8 @@ const isThumbnail = variant === "thumbnail";
       if (initialized.has(root)) return;
       initialized.add(root);
       new ArchiveModelViewer(root).start().catch((error) => {
-        root.querySelector(".model-viewer-status").textContent = "Preview failed";
+        root.dataset.viewerStatus = "failed";
+        updateViewerStatus(root);
         root.classList.add("is-loaded");
         console.error(error);
       });
@@ -345,4 +407,7 @@ const isThumbnail = variant === "thumbnail";
   }
 
   initModelViewers();
+  window.addEventListener("archive-language-change", () => {
+    document.querySelectorAll(".model-viewer-3d").forEach(updateViewerStatus);
+  });
 </script>

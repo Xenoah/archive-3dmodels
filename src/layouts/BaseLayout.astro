@@ -1,7 +1,13 @@
 ---
 import "../styles/global.css";
 
-const { title = "3D Models", description = "3D model archive for downloads.", image = "" } = Astro.props;
+const {
+  title = "3Dモデル",
+  titleEn = "3D Models",
+  description = "ダウンロード可能な3Dモデルの静的アーカイブです。",
+  descriptionEn = "3D model archive for downloads.",
+  image = ""
+} = Astro.props;
 const base = import.meta.env.BASE_URL.replace(/\/$/, "");
 const canonical = Astro.url.href;
 const imageUrl = image ? new URL(image, Astro.site).href : "";
@@ -36,12 +42,16 @@ const imageUrl = image ? new URL(image, Astro.site).href : "";
         <nav class="nav" aria-label="Global">
           <a class="brand" href={`${base}/`}>
             <strong>3D Models</strong>
-            <span>Static distribution archive</span>
+            <span data-lang-ja="静的配布アーカイブ" data-lang-en="Static distribution archive">静的配布アーカイブ</span>
           </a>
           <div class="nav-links">
-            <a href={`${base}/`}>Models</a>
-            <a href={`${base}/terms/`}>Terms</a>
+            <a href={`${base}/`} data-lang-ja="モデル" data-lang-en="Models">モデル</a>
+            <a href={`${base}/terms/`} data-lang-ja="規約" data-lang-en="Terms">規約</a>
             <a href={`${base}/rss.xml`}>RSS</a>
+            <div class="language-switch" aria-label="Language">
+              <button type="button" data-lang-switch="ja" aria-pressed="true">JP</button>
+              <button type="button" data-lang-switch="en" aria-pressed="false">EN</button>
+            </div>
           </div>
         </nav>
       </header>
@@ -50,9 +60,72 @@ const imageUrl = image ? new URL(image, Astro.site).href : "";
       </main>
       <footer class="site-footer">
         <div class="inner">
-          <span>Generated as static HTML, CSS, and JavaScript from Markdown and source files.</span>
+          <span
+            data-lang-ja="Markdown とソースファイルから静的な HTML、CSS、JavaScript として生成しています。"
+            data-lang-en="Generated as static HTML, CSS, and JavaScript from Markdown and source files."
+          >
+            Markdown とソースファイルから静的な HTML、CSS、JavaScript として生成しています。
+          </span>
         </div>
       </footer>
     </div>
+    <script define:vars={{ title, titleEn, description, descriptionEn }}>
+      const languageKey = "archive-3dmodels-language";
+      const supportedLanguages = new Set(["ja", "en"]);
+
+      function getSavedLanguage() {
+        const saved = localStorage.getItem(languageKey);
+        return supportedLanguages.has(saved) ? saved : "ja";
+      }
+
+      function setMetaContent(selector, value) {
+        const element = document.querySelector(selector);
+        if (element) element.setAttribute("content", value);
+      }
+
+      function applyLanguage(language) {
+        const lang = supportedLanguages.has(language) ? language : "ja";
+        document.documentElement.lang = lang;
+        document.documentElement.dataset.lang = lang;
+        document.title = lang === "en" ? titleEn : title;
+        setMetaContent('meta[name="description"]', lang === "en" ? descriptionEn : description);
+        setMetaContent('meta[property="og:title"]', lang === "en" ? titleEn : title);
+        setMetaContent('meta[property="og:description"]', lang === "en" ? descriptionEn : description);
+        setMetaContent('meta[name="twitter:title"]', lang === "en" ? titleEn : title);
+        setMetaContent('meta[name="twitter:description"]', lang === "en" ? descriptionEn : description);
+
+        document.querySelectorAll("[data-lang-ja][data-lang-en]").forEach((element) => {
+          element.textContent = element.dataset[`lang${lang === "en" ? "En" : "Ja"}`] ?? "";
+        });
+        document.querySelectorAll("[data-lang-placeholder-ja][data-lang-placeholder-en]").forEach((element) => {
+          element.setAttribute(
+            "placeholder",
+            element.dataset[`langPlaceholder${lang === "en" ? "En" : "Ja"}`] ?? ""
+          );
+        });
+        document.querySelectorAll("[data-lang-aria-label-ja][data-lang-aria-label-en]").forEach((element) => {
+          element.setAttribute(
+            "aria-label",
+            element.dataset[`langAriaLabel${lang === "en" ? "En" : "Ja"}`] ?? ""
+          );
+        });
+        document.querySelectorAll("[data-lang-switch]").forEach((button) => {
+          button.setAttribute("aria-pressed", button.dataset.langSwitch === lang ? "true" : "false");
+        });
+        localStorage.setItem(languageKey, lang);
+        window.dispatchEvent(new CustomEvent("archive-language-change", { detail: { language: lang } }));
+      }
+
+      document.querySelectorAll("[data-lang-switch]").forEach((button) => {
+        button.addEventListener("click", () => applyLanguage(button.dataset.langSwitch));
+      });
+
+      window.archiveLanguage = {
+        get: () => document.documentElement.dataset.lang || "ja",
+        apply: applyLanguage
+      };
+
+      applyLanguage(getSavedLanguage());
+    </script>
   </body>
 </html>

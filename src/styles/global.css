@@ -96,6 +96,7 @@ select {
 }
 
 .nav-links a,
+.language-switch button,
 .button,
 .ghost-button {
   min-height: 38px;
@@ -111,15 +112,44 @@ select {
 }
 
 .nav-links a,
+.language-switch button,
 .ghost-button {
   color: var(--muted);
 }
 
 .nav-links a:hover,
+.language-switch button:hover,
 .ghost-button:hover {
   border-color: var(--line);
   background: var(--surface);
   color: var(--text);
+}
+
+.language-switch {
+  display: inline-grid;
+  grid-template-columns: repeat(2, minmax(38px, 1fr));
+  gap: 3px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.72);
+  padding: 3px;
+}
+
+.language-switch button {
+  min-width: 38px;
+  min-height: 32px;
+  border-color: transparent;
+  background: transparent;
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 800;
+  padding: 0 8px;
+}
+
+.language-switch button[aria-pressed="true"] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
 }
 
 .button {
