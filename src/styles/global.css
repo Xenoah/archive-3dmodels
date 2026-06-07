@@ -287,6 +287,10 @@ select {
 }
 
 .thumb {
+  --thumb-rotate-x: 0deg;
+  --thumb-rotate-y: 0deg;
+  --thumb-shift-x: 0px;
+  --thumb-shift-y: 0px;
   aspect-ratio: 4 / 3;
   background:
     radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.9), transparent 28%),
@@ -297,6 +301,7 @@ select {
   color: var(--muted);
   overflow: hidden;
   position: relative;
+  perspective: 720px;
 }
 
 .thumb span {
@@ -384,6 +389,17 @@ select {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transform: translate3d(var(--thumb-shift-x), var(--thumb-shift-y), 0)
+    rotateX(var(--thumb-rotate-x))
+    rotateY(var(--thumb-rotate-y))
+    scale(1.08);
+  transform-style: preserve-3d;
+  transition: transform 160ms ease-out;
+  will-change: transform;
+}
+
+.thumb:hover img {
+  transition-duration: 40ms;
 }
 
 .thumb .model-viewer-3d {

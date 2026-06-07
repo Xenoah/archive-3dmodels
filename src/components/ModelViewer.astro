@@ -132,7 +132,7 @@ const isThumbnail = variant === "thumbnail";
           const rect = this.root.getBoundingClientRect();
           const x = ((event.clientX - rect.left) / rect.width - 0.5) * 2;
           const y = ((event.clientY - rect.top) / rect.height - 0.5) * 2;
-          this.hoverRotation = { x: y * 0.55, y: x * 1.35 };
+          this.hoverRotation = { x: y * Math.PI * 0.62, y: x * Math.PI * 1.15 };
         });
         this.root.addEventListener("pointerleave", () => {
           this.hoverRotation = null;
@@ -282,8 +282,8 @@ const isThumbnail = variant === "thumbnail";
       if (this.isThumbnail && this.model) {
         const targetX = this.hoverRotation?.x ?? 0.15;
         const targetY = this.hoverRotation?.y ?? -0.45;
-        this.model.rotation.x += (targetX - this.model.rotation.x) * 0.12;
-        this.model.rotation.y += (targetY - this.model.rotation.y) * 0.12;
+        this.model.rotation.x += (targetX - this.model.rotation.x) * 0.18;
+        this.model.rotation.y += (targetY - this.model.rotation.y) * 0.18;
       }
       this.renderer.render(this.scene, this.camera);
     }

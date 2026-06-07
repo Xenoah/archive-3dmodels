@@ -70,6 +70,7 @@ const latest = listedModels.slice(0, 3);
     </select>
     <select id="sort" aria-label="Sort order">
       <option value="updated-desc">Newest first</option>
+      <option value="created-desc">Created newest</option>
       <option value="title-asc">Name A-Z</option>
       <option value="category-asc">Category</option>
     </select>
@@ -94,6 +95,7 @@ const latest = listedModels.slice(0, 3);
             data-tags={(model.tags ?? []).join(" ")}
             data-license={model.license}
             data-updated={model.updated || ""}
+            data-created={model.created || ""}
           >
             <div class="thumb">
               {model.status === "draft" && <div class="draft-badge">DRAFT</div>}
@@ -120,7 +122,8 @@ const latest = listedModels.slice(0, 3);
               <div class="meta-row">
                 <span class="pill">{model.category}</span>
                 <span class="pill">{model.license}</span>
-                {model.updated && <span class="pill">{model.updated}</span>}
+                {model.created && <span class="pill">created: {model.created}</span>}
+                {model.updated && model.updated !== model.created && <span class="pill">updated: {model.updated}</span>}
               </div>
               <div class="tag-row">
                 {(model.tags ?? []).slice(0, 5).map((tag) => <span class="pill">#{tag}</span>)}
@@ -156,6 +159,9 @@ const latest = listedModels.slice(0, 3);
         if (sort === "category-asc") {
           return `${a.dataset.category} ${a.dataset.title}`.localeCompare(`${b.dataset.category} ${b.dataset.title}`);
         }
+        if (sort === "created-desc") {
+          return (b.dataset.created || "").localeCompare(a.dataset.created || "") || a.dataset.title.localeCompare(b.dataset.title);
+        }
         return (b.dataset.updated || "").localeCompare(a.dataset.updated || "") || a.dataset.title.localeCompare(b.dataset.title);
       });
       for (const card of sortedCards) grid?.append(card);
@@ -172,5 +178,24 @@ const latest = listedModels.slice(0, 3);
     }
 
     form?.addEventListener("input", filterCards);
+
+    for (const card of cards) {
+      const thumb = card.querySelector(".thumb");
+      thumb.addEventListener("pointermove", (event) => {
+        const rect = thumb.getBoundingClientRect();
+        const x = ((event.clientX - rect.left) / rect.width - 0.5) * 2;
+        const y = ((event.clientY - rect.top) / rect.height - 0.5) * 2;
+        thumb.style.setProperty("--thumb-rotate-x", `${(-y * 13).toFixed(2)}deg`);
+        thumb.style.setProperty("--thumb-rotate-y", `${(x * 16).toFixed(2)}deg`);
+        thumb.style.setProperty("--thumb-shift-x", `${(x * 8).toFixed(2)}px`);
+        thumb.style.setProperty("--thumb-shift-y", `${(y * 8).toFixed(2)}px`);
+      });
+      thumb.addEventListener("pointerleave", () => {
+        thumb.style.removeProperty("--thumb-rotate-x");
+        thumb.style.removeProperty("--thumb-rotate-y");
+        thumb.style.removeProperty("--thumb-shift-x");
+        thumb.style.removeProperty("--thumb-shift-y");
+      });
+    }
   </script>
 </BaseLayout>

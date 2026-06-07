@@ -175,8 +175,16 @@ function selectModelSource(files) {
 
 async function fileYearMonth(file) {
   const fileStat = await stat(file);
-  const created = Number.isNaN(fileStat.birthtimeMs) || fileStat.birthtimeMs <= 0 ? fileStat.mtime : fileStat.birthtime;
+  const created = earliestFileDate(fileStat);
   return formatYearMonth(created);
+}
+
+function earliestFileDate(fileStat) {
+  const candidates = [
+    Number.isNaN(fileStat.birthtimeMs) || fileStat.birthtimeMs <= 0 ? null : fileStat.birthtime,
+    Number.isNaN(fileStat.mtimeMs) || fileStat.mtimeMs <= 0 ? null : fileStat.mtime
+  ].filter(Boolean);
+  return candidates.sort((left, right) => left.getTime() - right.getTime())[0] ?? new Date();
 }
 
 function currentYearMonth() {
