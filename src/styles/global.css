@@ -386,6 +386,17 @@ select {
   object-fit: cover;
 }
 
+.thumb .model-viewer-3d {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+}
+
+.thumb .model-viewer-3d canvas {
+  min-height: 0;
+  cursor: pointer;
+}
+
 .card-body {
   padding: 16px;
   display: flex;
@@ -474,6 +485,35 @@ select {
     #dfe3df;
 }
 
+.model-viewer-loading {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+
+.model-viewer-loading::before {
+  width: 38px;
+  height: 38px;
+  border: 4px solid rgba(255, 255, 255, 0.72);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  content: "";
+  animation: model-viewer-spin 0.85s linear infinite;
+  box-shadow: 0 8px 22px rgba(31, 36, 32, 0.12);
+}
+
+.model-viewer-3d.is-loaded .model-viewer-loading {
+  display: none;
+}
+
+@keyframes model-viewer-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .stl-viewer canvas,
 .model-viewer-3d canvas {
   width: 100%;
@@ -509,6 +549,19 @@ select {
   padding: 8px 10px;
   font-size: 0.8rem;
   backdrop-filter: blur(12px);
+}
+
+.model-viewer-status.compact {
+  position: absolute;
+  left: 10px;
+  bottom: 10px;
+  z-index: 1;
+  border-color: rgba(255, 255, 255, 0.42);
+  background: rgba(31, 36, 32, 0.58);
+  color: white;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 7px 9px;
 }
 
 .stl-viewer-actions,

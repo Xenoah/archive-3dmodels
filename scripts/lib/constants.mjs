@@ -21,6 +21,7 @@ export const STATUSES = new Set(["draft", "public", "hidden"]);
 export const SOURCE_EXTENSIONS = new Set([".fbx", ".stl", ".step", ".stp", ".3mf", ".obj", ".txt", ".md", ".pdf"]);
 export const IMAGE_EXTENSIONS = new Set([".jpg", ".jpeg", ".png", ".webp"]);
 export const PREVIEW_EXTENSIONS = new Set([".glb"]);
+export const STANDALONE_MODEL_EXTENSIONS = new Set([".fbx", ".step", ".stp", ".stl", ".3mf", ".obj", ".glb"]);
 export const ALLOWED_EXTENSIONS = new Set([
   ...SOURCE_EXTENSIONS,
   ...IMAGE_EXTENSIONS,
@@ -88,6 +89,7 @@ export const KNOWN_FRONTMATTER_KEYS = new Set([
   "credit_required",
   "author",
   "created",
+  "uploaded",
   "updated",
   "scale",
   "material",

@@ -29,6 +29,7 @@ import {
   SECRET_PATTERNS,
   SLUG_RE,
   SOURCE_EXTENSIONS,
+  STANDALONE_MODEL_EXTENSIONS,
   STATUSES,
   WARN_FILE_BYTES
 } from "./constants.mjs";
@@ -118,6 +119,14 @@ async function validateInbox(report) {
     if (entry.name === ".gitkeep") continue;
     const fullPath = path.join(INBOX_DIR, entry.name);
     if (entry.isFile()) {
+      const ext = path.extname(entry.name).toLowerCase();
+      if (STANDALONE_MODEL_EXTENSIONS.has(ext)) {
+        report.warnings.push({
+          code: "inbox-loose-model-file",
+          message: `${path.join(INBOX_DIR, entry.name).replace(/\\/g, "/")}: standalone model file will be auto-foldered by import.`
+        });
+        continue;
+      }
       report.errors.push({
         code: "inbox-loose-file",
         message: `_inbox: loose files detected. Put files into _inbox/{slug}/.`
@@ -297,6 +306,8 @@ export async function collectModels(report, options = {}) {
         status,
         unit: data.unit || "mm",
         scale: data.scale || "",
+        created: data.created || "",
+        uploaded: data.uploaded || "",
         updated: data.updated || data.created || "",
         commercial_use: data.commercial_use,
         redistribution: data.redistribution,

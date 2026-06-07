@@ -6,8 +6,8 @@
 
 GitHub Pages上に、3Dモデルを配布する静的サイトを構築する。
 
-ユーザーは `_inbox/{slug}/` に画像やSTLなどのファイルを入れるだけで、モデルページの下書きを生成できる。
-正式公開時はMarkdownファイルのパラメーターを編集し、`status: public` に変更する。
+ユーザーは `_inbox/{slug}/` に画像やSTLなどのファイルを入れるだけで、公開モデルページを生成できる。
+必要に応じてMarkdownファイルのパラメーターを編集し、非公開にしたい場合は `status: draft` に変更する。
 
 サイトは静的サイトとして生成する。
 GitHub Pages上でサーバー処理は行わない。
@@ -246,38 +246,38 @@ _inbox/usb-a-cat/
 .zip .7z .rar
 ```
 
-### 8.3 `_inbox` 直下にファイルがある場合
+### 8.3 `_inbox` 直下に3Dファイルがある場合
 
-以下はERROR。
+単体3Dファイルは自動でフォルダ化する。
 
 ```text
 _inbox/
-├─ body.stl
-├─ IMG_001.jpg
-└─ IMG_002.jpg
+└─ body.stl
 ```
 
-理由は、どのモデルに属するか不明なため。
-
-エラー表示例。
+import時に以下へ移動してから通常の変換を行う。
 
 ```text
-[ERROR] _inbox: loose files detected.
-
-Put files into:
-_inbox/{slug}/
-
-Example:
-_inbox/usb-a-cat/body.stl
+_inbox/body/
+└─ body.stl
 ```
 
-救済コマンドを用意する。
+対象拡張子。
 
-```bash
-npm run import:loose usb-a-cat -- --apply
+```text
+.fbx .step .stp .stl .3mf .obj .glb
 ```
 
-これにより `_inbox` 直下ファイルを `_inbox/usb-a-cat/` に移動する。
+同名slugが既に存在する場合は `body-2` のように連番を付ける。
+
+画像や説明ファイルなど、単体3Dファイルではない直下ファイルはERROR。
+
+```text
+_inbox/
+└─ IMG_001.jpg
+```
+
+複数ファイルを1つのモデルとして扱いたい場合は、従来どおり `_inbox/{slug}/` を作ってその中に入れる。
 
 ### 8.4 `_inbox` と既存slugが衝突した場合
 
@@ -323,10 +323,12 @@ content/models/usb-a-cat/
 title: "USB A Cat"
 category: "other"
 tags: []
-license: "Original"
+license: "CC BY 4.0"
 version: "0.1.0"
-status: "draft"
+status: "public"
 unit: "mm"
+created: "2026年06月"
+uploaded: "2026年06月"
 ---
 
 概要を書く。
@@ -470,10 +472,12 @@ tags:
   - cat
   - usb
   - 3d-print
-license: "Original"
+license: "CC BY 4.0"
 version: "0.1.0"
-status: "draft"
+status: "public"
 unit: "mm"
+created: "2026年06月"
+uploaded: "2026年06月"
 commercial_use: false
 redistribution: false
 modification: true
@@ -514,6 +518,7 @@ USB-Aの頭をした猫モデルです。
 | version      |  string | バージョン  |
 | author       |  string | 作者     |
 | created      |  string | 作成日    |
+| uploaded     |  string | アップロード日 |
 | updated      |  string | 更新日    |
 | scale        |  string | スケール   |
 | material     |  string | 推奨材料   |
@@ -557,9 +562,13 @@ screw: "M3"
 | public |  表示 |    表示 |    する | 公開   |
 | hidden | 非表示 |    表示 |    する | 限定公開 |
 
-`_inbox` から生成されたモデルは必ず `draft` とする。
+`_inbox` から生成されたモデルは標準で `public` とする。
 
-`status` 未指定の場合も `draft` とする。
+`license` 未指定の場合は `CC BY 4.0` とする。
+
+`created` と `uploaded` は `YYYY年MM月` 形式とする。
+
+`created` 未指定の場合は、3Dモデルファイルの作成日から取得する。
 
 ## 15. カテゴリ仕様
 
@@ -895,7 +904,7 @@ src/data/models.generated.json
 対象。
 
 ```text
-_inbox直下にファイルがある
+_inbox直下に単体3Dではないファイルがある
 slug命名規則違反
 mdがない
 フォルダ名とmd名が一致しない
@@ -1407,7 +1416,8 @@ npm run normalize:model {slug} -- --apply
 
 ```text
 _inbox/{slug}/ にSTLと画像だけ入れてdraftモデルが生成される
-_inbox直下ファイルはERRORになる
+_inbox直下の単体3Dファイルは自動フォルダ化される
+_inbox直下の画像や説明ファイルはERRORになる
 dry-runで変更案が見える
 --apply指定時だけファイルが変更される
 ```

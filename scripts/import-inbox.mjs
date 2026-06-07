@@ -1,5 +1,5 @@
 import { existsSync } from "node:fs";
-import { copyFile, mkdir, readdir, readFile, writeFile } from "node:fs/promises";
+import { copyFile, mkdir, readdir, readFile, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import {
   CONTENT_MODELS_DIR,
@@ -47,6 +47,8 @@ const sources = entries.filter((entry) => SOURCE_EXTENSIONS.has(path.extname(ent
 const markdown = sources.find((entry) => path.extname(entry.name).toLowerCase() === ".md");
 const sourceFiles = sources.filter((entry) => path.extname(entry.name).toLowerCase() !== ".md");
 const hasFbxSource = sourceFiles.some((entry) => path.extname(entry.name).toLowerCase() === ".fbx");
+const modelSource = selectModelSource([...sourceFiles, ...previews]);
+const modelCreated = modelSource ? await fileYearMonth(path.join(inboxDir, modelSource.name)) : currentYearMonth();
 const firstPhotoIndex = await nextPhotoIndex(path.join(modelDir, "photos"));
 
 const plans = [];
@@ -117,11 +119,11 @@ for (const plan of plans) {
     }
   }
   if (plan.type === "write-md") {
-    await writeFile(plan.target, await initialMarkdown(slug, markdown ? path.join(inboxDir, markdown.name) : null));
+    await writeFile(plan.target, await initialMarkdown(slug, markdown ? path.join(inboxDir, markdown.name) : null, modelCreated));
   }
 }
 
-async function initialMarkdown(slugValue, sourceMarkdown) {
+async function initialMarkdown(slugValue, sourceMarkdown, createdFallback) {
   let body = [
     "TODO: Write the model overview.",
     "",
@@ -132,7 +134,7 @@ async function initialMarkdown(slugValue, sourceMarkdown) {
     "- Add a short summary.",
     "- Add useful tags.",
     "- Describe scale, material, print settings, and usage notes if they can be inferred.",
-    "- Keep `status: draft` until a human reviews the page.",
+    "- Review `status: public` before publishing if the model should stay private.",
     ""
   ].join("\n");
   let data = {};
@@ -147,10 +149,12 @@ async function initialMarkdown(slugValue, sourceMarkdown) {
       summary: data.summary || "",
       category: data.category || "other",
       tags: Array.isArray(data.tags) ? data.tags : [],
-      license: data.license || "Original",
+      license: data.license || "CC BY 4.0",
       version: data.version || "0.1.0",
-      status: "draft",
+      status: data.status || "public",
       unit: data.unit || "mm",
+      created: yearMonthValue(data.created, createdFallback),
+      uploaded: yearMonthValue(data.uploaded, currentYearMonth()),
       commercial_use: data.commercial_use ?? false,
       redistribution: data.redistribution ?? false,
       modification: data.modification ?? true,
@@ -158,6 +162,41 @@ async function initialMarkdown(slugValue, sourceMarkdown) {
     },
     body
   );
+}
+
+function selectModelSource(files) {
+  const priorities = [".fbx", ".step", ".stp", ".stl", ".3mf", ".obj", ".glb"];
+  return [...files].sort((left, right) => {
+    const leftIndex = priorities.indexOf(path.extname(left.name).toLowerCase());
+    const rightIndex = priorities.indexOf(path.extname(right.name).toLowerCase());
+    return (leftIndex === -1 ? 999 : leftIndex) - (rightIndex === -1 ? 999 : rightIndex) || left.name.localeCompare(right.name);
+  })[0] ?? null;
+}
+
+async function fileYearMonth(file) {
+  const fileStat = await stat(file);
+  const created = Number.isNaN(fileStat.birthtimeMs) || fileStat.birthtimeMs <= 0 ? fileStat.mtime : fileStat.birthtime;
+  return formatYearMonth(created);
+}
+
+function currentYearMonth() {
+  return formatYearMonth(new Date());
+}
+
+function formatYearMonth(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  return `${year}年${month}月`;
+}
+
+function yearMonthValue(value, fallback) {
+  if (typeof value !== "string" || value.trim() === "") return fallback;
+  const trimmed = value.trim();
+  const japanese = /^(\d{4})年(\d{1,2})月$/.exec(trimmed);
+  if (japanese) return `${japanese[1]}年${japanese[2].padStart(2, "0")}月`;
+  const parsed = new Date(trimmed);
+  if (!Number.isNaN(parsed.getTime())) return formatYearMonth(parsed);
+  return trimmed;
 }
 
 async function nextPhotoIndex(photosDir) {

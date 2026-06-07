@@ -63,6 +63,8 @@ const relatedModels = models
         <span class="pill">{model.license}</span>
         <span class="pill">unit: {model.unit}</span>
         {model.version && <span class="pill">v{model.version}</span>}
+        {model.created && <span class="pill">created: {model.created}</span>}
+        {model.uploaded && <span class="pill">uploaded: {model.uploaded}</span>}
       </div>
 
       <div class="action-strip" aria-label="Model actions">
@@ -118,6 +120,10 @@ const relatedModels = models
       <dd>{model.unit}</dd>
       <dt>Scale</dt>
       <dd>{model.scale || "unspecified"}</dd>
+      <dt>Created</dt>
+      <dd>{model.created || "unspecified"}</dd>
+      <dt>Uploaded</dt>
+      <dd>{model.uploaded || "unspecified"}</dd>
       <dt>Source files</dt>
       <dd>{model.sourceCount}</dd>
       {model.assets.sources?.length > 0 && (
