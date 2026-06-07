@@ -454,7 +454,8 @@ select {
 .viewer model-viewer,
 .viewer .cover-image,
 .viewer .no-preview,
-.viewer .stl-viewer {
+.viewer .stl-viewer,
+.viewer .model-viewer-3d {
   width: 100%;
   aspect-ratio: 4 / 3;
 }
@@ -463,7 +464,8 @@ select {
   object-fit: cover;
 }
 
-.stl-viewer {
+.stl-viewer,
+.model-viewer-3d {
   position: relative;
   min-height: 360px;
   background:
@@ -472,18 +474,21 @@ select {
     #dfe3df;
 }
 
-.stl-viewer canvas {
+.stl-viewer canvas,
+.model-viewer-3d canvas {
   width: 100%;
   height: 100%;
   min-height: 360px;
   cursor: grab;
 }
 
-.stl-viewer canvas:active {
+.stl-viewer canvas:active,
+.model-viewer-3d canvas:active {
   cursor: grabbing;
 }
 
-.stl-viewer-ui {
+.stl-viewer-ui,
+.model-viewer-ui {
   position: absolute;
   left: 14px;
   right: 14px;
@@ -495,7 +500,8 @@ select {
   pointer-events: none;
 }
 
-.stl-viewer-status {
+.stl-viewer-status,
+.model-viewer-status {
   border: 1px solid rgba(255, 255, 255, 0.55);
   border-radius: 6px;
   background: rgba(31, 36, 32, 0.58);
@@ -505,13 +511,17 @@ select {
   backdrop-filter: blur(12px);
 }
 
-.stl-viewer-actions {
+.stl-viewer-actions,
+.model-viewer-controls {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   pointer-events: auto;
 }
 
-.stl-viewer-actions button {
+.stl-viewer-actions button,
+.model-viewer-controls button,
+.model-viewer-controls select {
   border: 1px solid rgba(255, 255, 255, 0.55);
   border-radius: 6px;
   background: rgba(255, 255, 255, 0.78);
@@ -522,7 +532,9 @@ select {
   backdrop-filter: blur(12px);
 }
 
-.stl-viewer-actions button:hover {
+.stl-viewer-actions button:hover,
+.model-viewer-controls button:hover,
+.model-viewer-controls select:hover {
   background: white;
 }
 
@@ -698,6 +710,27 @@ select {
   .model-grid,
   .stats {
     grid-template-columns: 1fr;
+  }
+
+  .model-viewer-ui {
+    align-items: flex-start;
+    box-sizing: border-box;
+    flex-direction: column;
+    max-width: calc(100% - 28px);
+  }
+
+  .model-viewer-controls {
+    display: grid;
+    box-sizing: border-box;
+    grid-template-columns: minmax(0, 1fr);
+    max-width: 100%;
+    width: min(220px, calc(100vw - 46px));
+  }
+
+  .model-viewer-controls button,
+  .model-viewer-controls select {
+    min-width: 0;
+    width: 100%;
   }
 
   .gallery {

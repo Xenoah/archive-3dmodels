@@ -1,0 +1,316 @@
+---
+const { source, title = "3D preview" } = Astro.props;
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+---
+
+<div
+  class="model-viewer-3d"
+  data-model-src={source.url}
+  data-model-type={source.type}
+  data-model-name={source.name}
+  data-occt-base={`${base}/vendor/occt-import-js`}
+>
+  <canvas aria-label={title}></canvas>
+  <div class="model-viewer-ui">
+    <span class="model-viewer-status">Loading {source.type.toUpperCase()}</span>
+    <div class="model-viewer-controls" aria-label="3D preview controls">
+      <button type="button" data-action="reset">Reset</button>
+      <button type="button" data-action="spin">Spin</button>
+      <button type="button" data-action="wire">Wire</button>
+      <select data-setting="material" aria-label="Material style">
+        <option value="original">Original</option>
+        <option value="clay">Clay</option>
+        <option value="metal">Metal</option>
+        <option value="plastic">Plastic</option>
+      </select>
+      <select data-setting="lighting" aria-label="Lighting style">
+        <option value="studio">Studio</option>
+        <option value="soft">Soft</option>
+        <option value="front">Front</option>
+        <option value="high">High</option>
+      </select>
+    </div>
+  </div>
+</div>
+
+<script>
+  import * as THREE from "three";
+  import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+  import { FBXLoader } from "three/examples/jsm/loaders/FBXLoader.js";
+  import { STLLoader } from "three/examples/jsm/loaders/STLLoader.js";
+
+  const initialized = new WeakSet();
+  let occtPromise = null;
+
+  class ArchiveModelViewer {
+    constructor(root) {
+      this.root = root;
+      this.canvas = root.querySelector("canvas");
+      this.status = root.querySelector(".model-viewer-status");
+      this.src = root.dataset.modelSrc;
+      this.type = root.dataset.modelType;
+      this.occtBase = root.dataset.occtBase;
+      this.spin = true;
+      this.wireframe = false;
+      this.materialMode = "original";
+      this.lightingMode = "studio";
+      this.meshes = [];
+    }
+
+    async start() {
+      this.createScene();
+      this.installEvents();
+      const object = await this.loadObject();
+      this.model = object;
+      this.scene.add(object);
+      this.collectMeshes(object);
+      this.applyMaterial();
+      this.applyLighting();
+      this.fitCamera(object);
+      this.status.textContent = `${this.type.toUpperCase()} preview`;
+      this.renderer.setAnimationLoop(() => this.draw());
+    }
+
+    createScene() {
+      this.scene = new THREE.Scene();
+      this.scene.background = null;
+      this.camera = new THREE.PerspectiveCamera(42, 1, 0.01, 100000);
+      this.camera.position.set(3.2, 2.5, 3.4);
+
+      this.renderer = new THREE.WebGLRenderer({ canvas: this.canvas, antialias: true, alpha: true });
+      this.renderer.outputColorSpace = THREE.SRGBColorSpace;
+      this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      this.renderer.toneMappingExposure = 1.05;
+
+      this.controls = new OrbitControls(this.camera, this.canvas);
+      this.controls.enableDamping = true;
+      this.controls.dampingFactor = 0.08;
+      this.controls.autoRotate = this.spin;
+      this.controls.autoRotateSpeed = 1.3;
+
+      this.ambientLight = new THREE.AmbientLight(0xffffff, 0.45);
+      this.hemiLight = new THREE.HemisphereLight(0xffffff, 0x66706c, 1.0);
+      this.keyLight = new THREE.DirectionalLight(0xffffff, 1.2);
+      this.fillLight = new THREE.DirectionalLight(0xc7f7f0, 0.55);
+      this.scene.add(this.ambientLight, this.hemiLight, this.keyLight, this.fillLight);
+    }
+
+    installEvents() {
+      this.root.querySelector('[data-action="reset"]').addEventListener("click", () => this.fitCamera(this.model));
+      this.root.querySelector('[data-action="spin"]').addEventListener("click", () => {
+        this.spin = !this.spin;
+        this.controls.autoRotate = this.spin;
+      });
+      this.root.querySelector('[data-action="wire"]').addEventListener("click", () => {
+        this.wireframe = !this.wireframe;
+        this.applyWireframe();
+      });
+      this.root.querySelector('[data-setting="material"]').addEventListener("change", (event) => {
+        this.materialMode = event.target.value;
+        this.applyMaterial();
+      });
+      this.root.querySelector('[data-setting="lighting"]').addEventListener("change", (event) => {
+        this.lightingMode = event.target.value;
+        this.applyLighting();
+      });
+    }
+
+    async loadObject() {
+      if (this.type === "fbx") return this.loadFbx();
+      if (this.type === "step") return this.loadStep();
+      if (this.type === "stl") return this.loadStl();
+      throw new Error(`Unsupported preview type: ${this.type}`);
+    }
+
+    loadFbx() {
+      this.status.textContent = "Loading FBX";
+      const loader = new FBXLoader();
+      const resourcePath = this.src.slice(0, this.src.lastIndexOf("/") + 1);
+      loader.setResourcePath(resourcePath);
+      return new Promise((resolve, reject) => {
+        loader.load(this.src, resolve, undefined, reject);
+      });
+    }
+
+    loadStl() {
+      this.status.textContent = "Loading STL";
+      const loader = new STLLoader();
+      return new Promise((resolve, reject) => {
+        loader.load(
+          this.src,
+          (geometry) => {
+            geometry.computeVertexNormals();
+            const material = new THREE.MeshStandardMaterial({
+              color: 0x5aa89f,
+              roughness: 0.5,
+              metalness: 0.08
+            });
+            resolve(new THREE.Mesh(geometry, material));
+          },
+          undefined,
+          reject
+        );
+      });
+    }
+
+    async loadStep() {
+      this.status.textContent = "Loading STEP";
+      const occt = await loadOcct(this.occtBase);
+      const response = await fetch(this.src);
+      if (!response.ok) throw new Error(`Failed to fetch STEP: ${response.status}`);
+      const buffer = new Uint8Array(await response.arrayBuffer());
+      const result = occt.ReadStepFile(buffer, {
+        linearUnit: "millimeter",
+        linearDeflectionType: "bounding_box_ratio",
+        linearDeflection: 0.0008,
+        angularDeflection: 0.35
+      });
+      if (!result.success) throw new Error("STEP import failed");
+      const group = new THREE.Group();
+      for (const mesh of result.meshes ?? []) group.add(buildStepMesh(mesh));
+      return group;
+    }
+
+    collectMeshes(object) {
+      this.meshes = [];
+      object.traverse((item) => {
+        if (!item.isMesh) return;
+        item.castShadow = true;
+        item.receiveShadow = true;
+        item.userData.originalMaterial = item.material;
+        this.meshes.push(item);
+      });
+    }
+
+    applyMaterial() {
+      for (const mesh of this.meshes) {
+        if (this.materialMode === "original") {
+          mesh.material = mesh.userData.originalMaterial;
+        } else {
+          mesh.material = this.createMaterial(mesh);
+        }
+      }
+      this.applyWireframe();
+    }
+
+    createMaterial(mesh) {
+      const baseColor = mesh.userData.viewerColor ?? new THREE.Color(0x5aa89f);
+      if (this.materialMode === "metal") {
+        return new THREE.MeshStandardMaterial({ color: 0xb7bec2, roughness: 0.28, metalness: 0.72 });
+      }
+      if (this.materialMode === "plastic") {
+        return new THREE.MeshStandardMaterial({ color: baseColor, roughness: 0.38, metalness: 0.0 });
+      }
+      return new THREE.MeshStandardMaterial({ color: 0xb9c7c1, roughness: 0.74, metalness: 0.04 });
+    }
+
+    applyWireframe() {
+      for (const mesh of this.meshes) {
+        const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+        for (const material of materials) material.wireframe = this.wireframe;
+      }
+    }
+
+    applyLighting() {
+      const modes = {
+        studio: { ambient: 0.36, hemi: 1.0, key: 1.32, fill: 0.58, keyPos: [3, 5, 4], fillPos: [-4, 2, -3] },
+        soft: { ambient: 0.72, hemi: 0.82, key: 0.62, fill: 0.38, keyPos: [2, 3, 4], fillPos: [-3, 2, 2] },
+        front: { ambient: 0.42, hemi: 0.62, key: 1.5, fill: 0.22, keyPos: [0, 1, 5], fillPos: [-2, 1, 2] },
+        high: { ambient: 0.24, hemi: 0.64, key: 1.9, fill: 0.38, keyPos: [1, 7, 3], fillPos: [-4, 2, -2] }
+      };
+      const mode = modes[this.lightingMode] ?? modes.studio;
+      this.ambientLight.intensity = mode.ambient;
+      this.hemiLight.intensity = mode.hemi;
+      this.keyLight.intensity = mode.key;
+      this.fillLight.intensity = mode.fill;
+      this.keyLight.position.set(...mode.keyPos);
+      this.fillLight.position.set(...mode.fillPos);
+    }
+
+    fitCamera(object) {
+      if (!object) return;
+      const box = new THREE.Box3().setFromObject(object);
+      const center = box.getCenter(new THREE.Vector3());
+      const size = box.getSize(new THREE.Vector3());
+      object.position.sub(center);
+      const radius = Math.max(size.x, size.y, size.z, 1);
+      const distance = radius * 1.8;
+      this.camera.near = Math.max(distance / 1000, 0.01);
+      this.camera.far = distance * 1000;
+      this.camera.position.set(distance * 0.9, distance * 0.68, distance * 0.92);
+      this.camera.updateProjectionMatrix();
+      this.controls.target.set(0, 0, 0);
+      this.controls.update();
+    }
+
+    draw() {
+      const rect = this.root.getBoundingClientRect();
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const width = Math.max(1, Math.floor(rect.width * dpr));
+      const height = Math.max(1, Math.floor(rect.height * dpr));
+      if (this.canvas.width !== width || this.canvas.height !== height) {
+        this.renderer.setSize(rect.width, rect.height, false);
+        this.camera.aspect = rect.width / rect.height;
+        this.camera.updateProjectionMatrix();
+      }
+      this.controls.update();
+      this.renderer.render(this.scene, this.camera);
+    }
+  }
+
+  function buildStepMesh(resultMesh) {
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute("position", new THREE.Float32BufferAttribute(flattenArray(resultMesh.attributes.position.array), 3));
+    if (resultMesh.attributes.normal) {
+      geometry.setAttribute("normal", new THREE.Float32BufferAttribute(flattenArray(resultMesh.attributes.normal.array), 3));
+    } else {
+      geometry.computeVertexNormals();
+    }
+    geometry.setIndex(new THREE.BufferAttribute(Uint32Array.from(flattenArray(resultMesh.index.array)), 1));
+    const color = resultMesh.color ? new THREE.Color(resultMesh.color[0], resultMesh.color[1], resultMesh.color[2]) : new THREE.Color(0x9fb8b2);
+    const material = new THREE.MeshStandardMaterial({ color, roughness: 0.48, metalness: 0.05 });
+    const mesh = new THREE.Mesh(geometry, material);
+    mesh.name = resultMesh.name || "STEP mesh";
+    mesh.userData.viewerColor = color;
+    return mesh;
+  }
+
+  function flattenArray(value) {
+    return Array.isArray(value?.[0]) ? value.flat() : value;
+  }
+
+  async function loadOcct(base) {
+    if (!occtPromise) {
+      occtPromise = loadScript(`${base}/occt-import-js.js`).then(() =>
+        window.occtimportjs({
+          locateFile: (fileName) => `${base}/${fileName}`
+        })
+      );
+    }
+    return occtPromise;
+  }
+
+  function loadScript(src) {
+    if (document.querySelector(`script[src="${src}"]`)) return Promise.resolve();
+    return new Promise((resolve, reject) => {
+      const script = document.createElement("script");
+      script.src = src;
+      script.onload = resolve;
+      script.onerror = reject;
+      document.head.append(script);
+    });
+  }
+
+  function initModelViewers() {
+    document.querySelectorAll(".model-viewer-3d").forEach((root) => {
+      if (initialized.has(root)) return;
+      initialized.add(root);
+      new ArchiveModelViewer(root).start().catch((error) => {
+        root.querySelector(".model-viewer-status").textContent = "Preview failed";
+        console.error(error);
+      });
+    });
+  }
+
+  initModelViewers();
+</script>

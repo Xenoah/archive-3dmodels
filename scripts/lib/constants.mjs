@@ -18,7 +18,7 @@ export const CATEGORIES = new Set([
 ]);
 
 export const STATUSES = new Set(["draft", "public", "hidden"]);
-export const SOURCE_EXTENSIONS = new Set([".stl", ".step", ".stp", ".3mf", ".obj", ".txt", ".md", ".pdf"]);
+export const SOURCE_EXTENSIONS = new Set([".fbx", ".stl", ".step", ".stp", ".3mf", ".obj", ".txt", ".md", ".pdf"]);
 export const IMAGE_EXTENSIONS = new Set([".jpg", ".jpeg", ".png", ".webp"]);
 export const PREVIEW_EXTENSIONS = new Set([".glb"]);
 export const ALLOWED_EXTENSIONS = new Set([

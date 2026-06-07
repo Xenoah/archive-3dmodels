@@ -1,6 +1,6 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
-import StlViewer from "../components/StlViewer.astro";
+import ModelViewer from "../components/ModelViewer.astro";
 import models from "../data/models.generated.json";
 
 export function getStaticPaths() {
@@ -35,8 +35,8 @@ const relatedModels = models
   <section class="detail-hero">
     <div class="viewer">
       {
-        model.assets.stlPreview ? (
-          <StlViewer src={model.assets.stlPreview} title={`${model.title} STL preview`} />
+        model.assets.viewer ? (
+          <ModelViewer source={model.assets.viewer} title={`${model.title} 3D preview`} />
         ) : model.assets.cover ? (
           <img class="cover-image" src={model.assets.cover} alt="" />
         ) : (

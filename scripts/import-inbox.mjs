@@ -46,6 +46,7 @@ const previews = entries.filter((entry) => PREVIEW_EXTENSIONS.has(path.extname(e
 const sources = entries.filter((entry) => SOURCE_EXTENSIONS.has(path.extname(entry.name).toLowerCase()));
 const markdown = sources.find((entry) => path.extname(entry.name).toLowerCase() === ".md");
 const sourceFiles = sources.filter((entry) => path.extname(entry.name).toLowerCase() !== ".md");
+const hasFbxSource = sourceFiles.some((entry) => path.extname(entry.name).toLowerCase() === ".fbx");
 const firstPhotoIndex = await nextPhotoIndex(path.join(modelDir, "photos"));
 
 const plans = [];
@@ -73,6 +74,13 @@ images.forEach((entry, index) => {
     from: path.join(inboxDir, entry.name),
     target: path.join(modelDir, "photos", `photo-${String(firstPhotoIndex + index).padStart(3, "0")}${ext}`)
   });
+  if (hasFbxSource) {
+    plans.push({
+      type: "copy",
+      from: path.join(inboxDir, entry.name),
+      target: uniqueTarget(path.join(modelDir, "source"), entry.name)
+    });
+  }
 });
 
 if (previews[0] && !existsSync(path.join(modelDir, "model.glb"))) {
@@ -114,7 +122,19 @@ for (const plan of plans) {
 }
 
 async function initialMarkdown(slugValue, sourceMarkdown) {
-  let body = "概要を書く。\n";
+  let body = [
+    "TODO: Write the model overview.",
+    "",
+    "## Copilot fill-in notes",
+    "",
+    "Copilot should fill missing information from the uploaded model files and filenames.",
+    "",
+    "- Add a short summary.",
+    "- Add useful tags.",
+    "- Describe scale, material, print settings, and usage notes if they can be inferred.",
+    "- Keep `status: draft` until a human reviews the page.",
+    ""
+  ].join("\n");
   let data = {};
   if (sourceMarkdown) {
     const parsed = parseFrontmatter(await readFile(sourceMarkdown, "utf8"));

@@ -17,6 +17,8 @@
     "preview": "astro preview"
   },
   "dependencies": {
-    "astro": "^5.9.2"
+    "astro": "^5.9.2",
+    "occt-import-js": "^0.0.23",
+    "three": "^0.184.0"
   }
 }

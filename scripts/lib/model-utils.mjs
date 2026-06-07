@@ -55,6 +55,7 @@ export function formatBool(value) {
 }
 
 export function downloadFolderForExtension(ext) {
+  if (ext === ".fbx") return "FBX";
   if (ext === ".stl") return "STL";
   if (ext === ".step" || ext === ".stp") return "STEP";
   if (ext === ".3mf") return "3MF";
@@ -272,10 +273,10 @@ export async function collectModels(report, options = {}) {
     const photos = await findPhotos(dir);
     const sources = await findSources(dir);
     const download = await findDownload(slug);
-    const hasStlPreview = sources.some((source) => path.extname(source).toLowerCase() === ".stl");
+    const hasViewerSource = sources.some((source) => [".fbx", ".step", ".stp", ".stl"].includes(path.extname(source).toLowerCase()));
 
     if (!cover) report.warnings.push({ code: "missing-cover", slug, message: `${slug}: cover image is missing.` });
-    if (!preview && !hasStlPreview) report.warnings.push({ code: "missing-preview", slug, message: `${slug}: preview model is missing.` });
+    if (!preview && !hasViewerSource) report.warnings.push({ code: "missing-preview", slug, message: `${slug}: preview model is missing.` });
     if (photos.length === 0) report.warnings.push({ code: "empty-photos", slug, message: `${slug}: photos are empty.` });
     if (sources.length === 0) report.warnings.push({ code: "empty-source", slug, message: `${slug}: source is empty.` });
     if (status === "draft") report.warnings.push({ code: "draft", slug, message: `${slug}: status is draft.` });
@@ -355,7 +356,10 @@ export async function findSources(dir) {
   if (!existsSync(sourceDir)) return [];
   const files = await listFilesRecursive(sourceDir);
   return files
-    .filter((file) => SOURCE_EXTENSIONS.has(path.extname(file).toLowerCase()))
+    .filter((file) => {
+      const ext = path.extname(file).toLowerCase();
+      return SOURCE_EXTENSIONS.has(ext) || IMAGE_EXTENSIONS.has(ext);
+    })
     .sort((a, b) => a.localeCompare(b));
 }
 
@@ -380,14 +384,29 @@ function makeAssets(slug, assets) {
     ext: path.extname(source).toLowerCase(),
     url: sourceUrl(source)
   }));
+  const viewer = findViewerAsset(sourceAssets);
   return {
     cover: url(assets.cover),
     preview: url(assets.preview),
     photos: assets.photos.map((photo) => `${base}/${slug}/photos/${path.basename(photo)}`),
     sources: sourceAssets,
     stlPreview: sourceAssets.find((source) => source.ext === ".stl")?.url ?? null,
+    viewer,
     download: assets.download ? `${base}/${slug}/downloads/${path.basename(assets.download)}` : null
   };
+}
+
+function findViewerAsset(sourceAssets) {
+  const priorities = [
+    { type: "fbx", exts: [".fbx"] },
+    { type: "step", exts: [".step", ".stp"] },
+    { type: "stl", exts: [".stl"] }
+  ];
+  for (const priority of priorities) {
+    const asset = sourceAssets.find((source) => priority.exts.includes(source.ext));
+    if (asset) return { ...asset, type: priority.type };
+  }
+  return null;
 }
 
 async function resetGeneratedPublic() {
