@@ -9,7 +9,29 @@ const categories = [...new Set(listedModels.map((model) => model.category).filte
 const tags = [...new Set(listedModels.flatMap((model) => model.tags ?? []))].sort();
 const licenses = [...new Set(listedModels.map((model) => model.license).filter(Boolean))].sort();
 const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+const siteUrl = new URL(`${base}/`, Astro.site).href;
 const latest = listedModels.slice(0, 3);
+const collectionJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "CollectionPage",
+  name: "Xenoah 3D Models",
+  description: "Xenoah が制作・配布するダウンロード可能な3Dモデルアーカイブです。",
+  url: siteUrl,
+  inLanguage: ["ja", "en"],
+  creator: {
+    "@type": "Person",
+    name: "Xenoah"
+  },
+  mainEntity: {
+    "@type": "ItemList",
+    itemListElement: publicModels.map((model, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      url: new URL(`${base}/${model.slug}/`, Astro.site).href,
+      name: model.title
+    }))
+  }
+};
 ---
 
 <BaseLayout
@@ -17,6 +39,7 @@ const latest = listedModels.slice(0, 3);
   titleEn="Xenoah 3D Models"
   description="Xenoah が制作・配布する3Dモデルをカテゴリ、タグ、ライセンスから探せます。"
   descriptionEn="Browse downloadable 3D models created and distributed by Xenoah by category, tag, and license."
+  jsonLd={collectionJsonLd}
 >
   <section class="intro" aria-labelledby="page-title">
     <div>

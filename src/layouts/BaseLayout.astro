@@ -6,11 +6,29 @@ const {
   titleEn = "3D Models",
   description = "ダウンロード可能な3Dモデルの静的アーカイブです。",
   descriptionEn = "3D model archive for downloads.",
-  image = ""
+  image = "",
+  robots = "index, follow",
+  jsonLd = []
 } = Astro.props;
 const base = import.meta.env.BASE_URL.replace(/\/$/, "");
 const canonical = Astro.url.href;
+const siteUrl = new URL(`${base}/`, Astro.site).href;
+const sitemapUrl = new URL(`${base}/sitemap.xml`, Astro.site).href;
 const imageUrl = image ? new URL(image, Astro.site).href : "";
+const googleSiteVerification = import.meta.env.PUBLIC_GOOGLE_SITE_VERIFICATION ?? "";
+const defaultJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: "Xenoah 3D Models",
+  alternateName: "Xenoah 3Dモデル",
+  url: siteUrl,
+  inLanguage: ["ja", "en"],
+  creator: {
+    "@type": "Person",
+    name: "Xenoah"
+  }
+};
+const jsonLdItems = [defaultJsonLd, ...(Array.isArray(jsonLd) ? jsonLd : [jsonLd])].filter(Boolean);
 ---
 
 <!doctype html>
@@ -19,8 +37,14 @@ const imageUrl = image ? new URL(image, Astro.site).href : "";
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content={description} />
+    <meta name="robots" content={robots} />
+    {googleSiteVerification && <meta name="google-site-verification" content={googleSiteVerification} />}
     <link rel="canonical" href={canonical} />
+    <link rel="sitemap" type="application/xml" href={sitemapUrl} />
     <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Xenoah 3D Models" />
+    <meta property="og:locale" content="ja_JP" />
+    <meta property="og:locale:alternate" content="en_US" />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonical} />
@@ -29,6 +53,7 @@ const imageUrl = image ? new URL(image, Astro.site).href : "";
     <meta name="twitter:title" content={title} />
     <meta name="twitter:description" content={description} />
     {imageUrl && <meta name="twitter:image" content={imageUrl} />}
+    {jsonLdItems.map((item) => <script type="application/ld+json" set:html={JSON.stringify(item)} />)}
     <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-PHNBTBWCDK"></script>
     <script>

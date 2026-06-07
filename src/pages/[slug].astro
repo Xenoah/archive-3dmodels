@@ -11,6 +11,9 @@ export function getStaticPaths() {
 
 const { model } = Astro.props;
 const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+const pageUrl = new URL(`${base}/${model.slug}/`, Astro.site).href;
+const homeUrl = new URL(`${base}/`, Astro.site).href;
+const absoluteImage = model.assets.cover ? new URL(model.assets.cover, Astro.site).href : "";
 const creditJa = model.credit_required === true ? "必要" : model.credit_required === false ? "不要" : "注記を確認";
 const creditEn = model.credit_required === true ? "Required" : model.credit_required === false ? "Not required" : "Check notes";
 const boolLabelJa = (value) => (value === true ? "許可" : value === false ? "不可" : "注記を確認");
@@ -42,6 +45,48 @@ const relatedModels = models
   .filter((item) => item.relatedScore > 0)
   .sort((a, b) => b.relatedScore - a.relatedScore || a.title.localeCompare(b.title))
   .slice(0, 3);
+const modelJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "CreativeWork",
+  name: model.title,
+  description: model.summary || model.bodyText || `${model.title} 3D model`,
+  url: pageUrl,
+  inLanguage: ["ja", "en"],
+  creator: {
+    "@type": "Person",
+    name: "Xenoah"
+  },
+  license: model.license,
+  dateCreated: model.createdAt || undefined,
+  dateModified: model.updatedAt || model.createdAt || undefined,
+  image: absoluteImage || undefined,
+  keywords: (model.tags ?? []).join(", "),
+  isAccessibleForFree: true,
+  encoding: (model.assets.sources ?? []).map((source) => ({
+    "@type": "MediaObject",
+    name: source.name,
+    encodingFormat: source.ext.replace(/^\./, "").toUpperCase(),
+    contentUrl: new URL(source.url, Astro.site).href
+  }))
+};
+const breadcrumbJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  itemListElement: [
+    {
+      "@type": "ListItem",
+      position: 1,
+      name: "Xenoah 3D Models",
+      item: homeUrl
+    },
+    {
+      "@type": "ListItem",
+      position: 2,
+      name: model.title,
+      item: pageUrl
+    }
+  ]
+};
 ---
 
 <BaseLayout
@@ -50,6 +95,8 @@ const relatedModels = models
   description={model.summary || `${model.title} のダウンロードページです。`}
   descriptionEn={model.summary || `${model.title} download page`}
   image={model.assets.cover || ""}
+  robots={model.status === "public" ? "index, follow" : "noindex, follow"}
+  jsonLd={[modelJsonLd, breadcrumbJsonLd]}
 >
   <a class="ghost-button" href={`${base}/`} data-lang-ja="モデル一覧へ戻る" data-lang-en="Back to models">モデル一覧へ戻る</a>
 
