@@ -15,7 +15,8 @@ const canonical = Astro.url.href;
 const siteUrl = new URL(`${base}/`, Astro.site).href;
 const sitemapUrl = new URL(`${base}/sitemap.xml`, Astro.site).href;
 const imageUrl = image ? new URL(image, Astro.site).href : "";
-const googleSiteVerification = import.meta.env.PUBLIC_GOOGLE_SITE_VERIFICATION ?? "";
+const googleSiteVerification =
+  import.meta.env.PUBLIC_GOOGLE_SITE_VERIFICATION ?? "aPtYwfsh75Fol8ou1AKrAWZXEAKl97LEWKER4G2wiuQ";
 const defaultJsonLd = {
   "@context": "https://schema.org",
   "@type": "WebSite",
