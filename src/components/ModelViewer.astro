@@ -1,5 +1,5 @@
 ---
-const { source, title = "3Dプレビュー", variant = "detail" } = Astro.props;
+const { source, title = "3Dプレビュー", variant = "detail", autoload = true } = Astro.props;
 const base = import.meta.env.BASE_URL.replace(/\/$/, "");
 const isThumbnail = variant === "thumbnail";
 ---
@@ -12,6 +12,7 @@ const isThumbnail = variant === "thumbnail";
   data-occt-base={`${base}/vendor/occt-import-js`}
   data-viewer-variant={variant}
   data-viewer-status="loading"
+  data-viewer-autoload={autoload ? "true" : "false"}
 >
   <canvas aria-label={title}></canvas>
   <div class="model-viewer-loading" aria-hidden="true"></div>
@@ -394,18 +395,22 @@ const isThumbnail = variant === "thumbnail";
   }
 
   function initModelViewers() {
-    document.querySelectorAll(".model-viewer-3d").forEach((root) => {
-      if (initialized.has(root)) return;
-      initialized.add(root);
-      new ArchiveModelViewer(root).start().catch((error) => {
-        root.dataset.viewerStatus = "failed";
-        updateViewerStatus(root);
-        root.classList.add("is-loaded");
-        console.error(error);
-      });
+    document.querySelectorAll('.model-viewer-3d[data-viewer-autoload="true"]').forEach(startModelViewer);
+  }
+
+  function startModelViewer(root) {
+    if (!root || initialized.has(root)) return;
+    initialized.add(root);
+    new ArchiveModelViewer(root).start().catch((error) => {
+      root.dataset.viewerStatus = "failed";
+      updateViewerStatus(root);
+      root.classList.add("is-loaded");
+      console.error(error);
     });
   }
 
+  window.archiveModelViewerStart = startModelViewer;
+  window.addEventListener("archive-model-viewer-activate", (event) => startModelViewer(event.detail?.root));
   initModelViewers();
   window.addEventListener("archive-language-change", () => {
     document.querySelectorAll(".model-viewer-3d").forEach(updateViewerStatus);

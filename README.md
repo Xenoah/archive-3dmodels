@@ -143,6 +143,8 @@ aliases: []
 
 ## ZIP生成
 
+詳細ページのソース一覧から各ファイルを個別にダウンロードできます。保存名は `{slug}_{部品名}.{ext}` 形式です。
+
 ZIPは `npm run generate` または `npm run build` で生成されます。
 
 ZIPに含めるもの:
@@ -300,5 +302,9 @@ Google tag / Google Analytics: Google の規約・ポリシーに従う
 
 - cover/photos が無いモデルの警告。
 - draft モデルの警告。
-- `.f3d` など未分類拡張子の警告。
 - Three.js/ビューア chunk が Vite の 500kB 警告しきい値を超える警告。
+## 現在の追加仕様メモ
+
+- 追加ファイルはブラックリスト方式。`FORBIDDEN_EXTENSIONS` と `FORBIDDEN_FILENAMES` に該当しない `source/` 配下のファイルはソース一覧と個別DLに反映される。
+- 一覧ページは3Dビューアを読み込まない。サムネイル画像がない場合はCSSフォールバック表示にする。
+- 詳細ページの3Dプレビューは `assets.viewers` にある対応ファイルだけを表示する。対応形式は FBX、STEP/STP、STL。

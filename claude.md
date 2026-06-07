@@ -81,6 +81,10 @@ https://xenoah.github.io/archive-3dmodels/sitemap.xml
 
 `src/components/ModelViewer.astro` を使う。
 
+一覧ページは3Dビューアを読み込まない。cover/thumbnail/photos 由来の画像があればサムネイル表示し、なければCSSフォールバックを表示する。
+
+詳細ページでは `assets.viewers` にある対応ファイルだけをタブ表示する。複数ある場合、最初のビューアだけ自動起動し、非表示のビューアはタブ選択時に起動する。
+
 優先順位:
 
 ```text
@@ -92,6 +96,10 @@ STL
 STEP/STP は `occt-import-js` を使用する。`npm run generate` で `public/vendor/occt-import-js/` に必要ファイルをコピーする。
 
 ビューアは Three.js chunk が大きいため、Vite の 500kB 警告が出ることがある。現在は警告のみでビルド成功する。
+
+ソース一覧の各ファイルは個別ダウンロードできる。保存名は `{slug}_{部品名}.{ext}` 形式。
+
+追加ファイルはブラックリスト方式。`FORBIDDEN_EXTENSIONS` と `FORBIDDEN_FILENAMES` に該当しない `source/` 配下のファイルは生成データ、公開アセット、個別DLに反映される。
 
 ### 日付管理
 
@@ -224,7 +232,6 @@ PowerShell環境では `npm` ではなく `npm.cmd` を使うと実行ポリシ�
 - cover image is missing
 - photos are empty
 - status is draft
-- unknown extension `.f3d`
 - Vite chunk size warning
 
 これらは現状、ビルド失敗ではない。

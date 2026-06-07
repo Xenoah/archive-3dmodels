@@ -1,6 +1,5 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
-import ModelViewer from "../components/ModelViewer.astro";
 import models from "../data/models.generated.json";
 
 const publicModels = models.filter((model) => model.status === "public");
@@ -154,8 +153,6 @@ const collectionJsonLd = {
               {model.status === "draft" && <div class="draft-badge">DRAFT</div>}
               {model.assets.cover ? (
                 <img src={model.assets.cover} alt="" loading="lazy" />
-              ) : model.assets.viewer ? (
-                <ModelViewer source={model.assets.viewer} title={`${model.title} thumbnail preview`} variant="thumbnail" />
               ) : (
                 <div class="model-fallback" aria-hidden="true">
                   <div class="cube-mark">

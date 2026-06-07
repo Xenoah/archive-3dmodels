@@ -517,6 +517,42 @@ select {
   box-shadow: var(--shadow);
 }
 
+.viewer-stack {
+  display: grid;
+}
+
+.viewer-panel[hidden] {
+  display: none;
+}
+
+.viewer-tabs {
+  border-top: 1px solid var(--line);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.74);
+}
+
+.viewer-tabs button {
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: white;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 0.82rem;
+  min-height: 34px;
+  min-width: 0;
+  padding: 0 10px;
+}
+
+.viewer-tabs button[aria-selected="true"] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
+  font-weight: 800;
+}
+
 .viewer model-viewer,
 .viewer .cover-image,
 .viewer .no-preview,
@@ -707,6 +743,24 @@ select {
 .download-box dd,
 .spec-list dd {
   margin: 0;
+}
+
+.spec-list dd a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.78);
+  color: var(--accent-strong);
+  margin: 0 6px 6px 0;
+  padding: 0 10px;
+  text-decoration: none;
+}
+
+.spec-list dd a:hover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
 }
 
 .notice-scrollbox {

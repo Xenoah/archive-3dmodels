@@ -3,10 +3,11 @@ import { mkdir, readdir, readFile, rename, writeFile } from "node:fs/promises";
 import path from "node:path";
 import {
   CONTENT_MODELS_DIR,
+  FORBIDDEN_EXTENSIONS,
+  FORBIDDEN_FILENAMES,
   IMAGE_EXTENSIONS,
   PREVIEW_EXTENSIONS,
-  SLUG_RE,
-  SOURCE_EXTENSIONS
+  SLUG_RE
 } from "./lib/constants.mjs";
 
 const slug = process.argv[2];
@@ -39,10 +40,17 @@ const topPreviews = entries.filter(
     entry.name !== "model.glb"
 );
 const topSources = entries.filter(
-  (entry) =>
-    entry.isFile() &&
-    SOURCE_EXTENSIONS.has(path.extname(entry.name).toLowerCase()) &&
-    entry.name !== `${slug}.md`
+  (entry) => {
+    if (!entry.isFile() || entry.name === `${slug}.md`) return false;
+    const ext = path.extname(entry.name).toLowerCase();
+    const basename = entry.name.toLowerCase();
+    return (
+      !IMAGE_EXTENSIONS.has(ext) &&
+      !PREVIEW_EXTENSIONS.has(ext) &&
+      !FORBIDDEN_FILENAMES.has(basename) &&
+      !FORBIDDEN_EXTENSIONS.has(ext)
+    );
+  }
 );
 
 let photoIndex = await nextPhotoIndex(path.join(dir, "photos"));

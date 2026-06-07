@@ -35,6 +35,7 @@ const formatDateTime = (value, locale) => {
 };
 const uploadedAtJa = formatDateTime(model.uploadedAt, "ja-JP");
 const uploadedAtEn = formatDateTime(model.uploadedAt, "en-US");
+const viewerSources = model.assets.viewers ?? (model.assets.viewer ? [model.assets.viewer] : []);
 const relatedModels = models
   .filter((item) => item.status === "public" && item.slug !== model.slug)
   .map((item) => {
@@ -103,8 +104,25 @@ const breadcrumbJsonLd = {
   <section class="detail-hero">
     <div class="viewer">
       {
-        model.assets.viewer ? (
-          <ModelViewer source={model.assets.viewer} title={`${model.title} 3D preview`} />
+        viewerSources.length > 0 ? (
+          <>
+            <div class="viewer-stack">
+              {viewerSources.map((source, index) => (
+                <div class="viewer-panel" data-viewer-panel hidden={index !== 0}>
+                  <ModelViewer source={source} title={`${model.title} ${source.name} 3D preview`} autoload={index === 0} />
+                </div>
+              ))}
+            </div>
+            {viewerSources.length > 1 && (
+              <div class="viewer-tabs" data-viewer-tabs aria-label="3Dプレビュー切り替え" data-lang-aria-label-ja="3Dプレビュー切り替え" data-lang-aria-label-en="3D preview switcher">
+                {viewerSources.map((source, index) => (
+                  <button type="button" data-viewer-index={index} aria-selected={index === 0 ? "true" : "false"}>
+                    {source.name}
+                  </button>
+                ))}
+              </div>
+            )}
+          </>
         ) : model.assets.cover ? (
           <img class="cover-image" src={model.assets.cover} alt="" />
         ) : (
@@ -225,7 +243,7 @@ const breadcrumbJsonLd = {
           <dt data-lang-ja="ソース一覧" data-lang-en="Source list">ソース一覧</dt>
           <dd>
             {model.assets.sources.map((source) => (
-              <a href={source.url}>{source.name}</a>
+              <a href={source.url} download={source.downloadName || source.name}>{source.name}</a>
             ))}
           </dd>
         </>
@@ -293,4 +311,28 @@ const breadcrumbJsonLd = {
       <span data-lang-ja="ZIPをダウンロード" data-lang-en="Download ZIP">ZIPをダウンロード</span>
     </a>
   </section>
+
+  <script>
+    document.querySelectorAll("[data-viewer-tabs]").forEach((tabs) => {
+      const viewer = tabs.closest(".viewer");
+      const panels = [...viewer.querySelectorAll("[data-viewer-panel]")];
+      const buttons = [...tabs.querySelectorAll("[data-viewer-index]")];
+
+      buttons.forEach((button) => {
+        button.addEventListener("click", () => {
+          const activeIndex = Number(button.dataset.viewerIndex);
+          buttons.forEach((item, index) => item.setAttribute("aria-selected", String(index === activeIndex)));
+          panels.forEach((panel, index) => {
+            panel.hidden = index !== activeIndex;
+          });
+          const root = panels[activeIndex]?.querySelector(".model-viewer-3d");
+          if (window.archiveModelViewerStart) {
+            window.archiveModelViewerStart(root);
+          } else {
+            window.dispatchEvent(new CustomEvent("archive-model-viewer-activate", { detail: { root } }));
+          }
+        });
+      });
+    });
+  </script>
 </BaseLayout>

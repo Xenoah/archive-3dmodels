@@ -12,7 +12,6 @@ import {
 } from "node:fs/promises";
 import path from "node:path";
 import {
-  ALLOWED_EXTENSIONS,
   CATEGORIES,
   CONTENT_MODELS_DIR,
   FORBIDDEN_FILENAMES,
@@ -23,12 +22,10 @@ import {
   KNOWN_FRONTMATTER_KEYS,
   MAX_FILE_BYTES,
   PERSONAL_INFO_PATTERNS,
-  PREVIEW_EXTENSIONS,
   PUBLIC_DIR,
   REPORTS_DIR,
   SECRET_PATTERNS,
   SLUG_RE,
-  SOURCE_EXTENSIONS,
   STANDALONE_MODEL_EXTENSIONS,
   STATUSES,
   WARN_FILE_BYTES
@@ -167,8 +164,6 @@ async function validateFileTree(dir, report, slug) {
       report.errors.push({ code: "forbidden-filename", slug, message: `${relative}: filename is forbidden.` });
     } else if (FORBIDDEN_EXTENSIONS.has(ext)) {
       report.errors.push({ code: "forbidden-extension", slug, message: `${relative}: ${ext} is forbidden.` });
-    } else if (ext && !ALLOWED_EXTENSIONS.has(ext) && !relative.endsWith(".gitkeep")) {
-      report.warnings.push({ code: "unknown-extension", slug, message: `${relative}: unknown extension.` });
     }
     if (ext === ".pdf") {
       report.warnings.push({ code: "pdf-metadata", slug, message: `${relative}: PDF may contain metadata; review before publishing.` });
@@ -288,7 +283,7 @@ export async function collectModels(report, options = {}) {
     const uploadedAt = dateTimeValue(data.uploadedAt, "");
     const updatedAt = dateTimeValue(data.updatedAt, "") || dateTimeValue(data.updated, "") || createdAt;
     const created = data.created || (createdAt ? formatYearMonth(new Date(createdAt)) : "") || "";
-    const hasViewerSource = sources.some((source) => [".fbx", ".step", ".stp", ".stl"].includes(path.extname(source).toLowerCase()));
+    const hasViewerSource = sources.some((source) => viewerTypeForExt(path.extname(source).toLowerCase()));
 
     if (!cover) report.warnings.push({ code: "missing-cover", slug, message: `${slug}: cover image is missing.` });
     if (!preview && !hasViewerSource) report.warnings.push({ code: "missing-preview", slug, message: `${slug}: preview model is missing.` });
@@ -394,7 +389,8 @@ export async function findSources(dir) {
   return files
     .filter((file) => {
       const ext = path.extname(file).toLowerCase();
-      return SOURCE_EXTENSIONS.has(ext) || IMAGE_EXTENSIONS.has(ext);
+      const basename = path.basename(file).toLowerCase();
+      return basename !== ".gitkeep" && !FORBIDDEN_FILENAMES.has(basename) && !FORBIDDEN_EXTENSIONS.has(ext);
     })
     .sort((a, b) => a.localeCompare(b));
 }
@@ -418,9 +414,11 @@ function makeAssets(slug, assets) {
   const sourceAssets = assets.sources.map((source) => ({
     name: path.basename(source),
     ext: path.extname(source).toLowerCase(),
-    url: sourceUrl(source)
+    url: sourceUrl(source),
+    downloadName: sourceDownloadName(slug, source)
   }));
-  const viewer = findViewerAsset(sourceAssets);
+  const viewers = findViewerAssets(sourceAssets);
+  const viewer = viewers[0] ?? null;
   return {
     cover: url(assets.cover),
     preview: url(assets.preview),
@@ -428,21 +426,38 @@ function makeAssets(slug, assets) {
     sources: sourceAssets,
     stlPreview: sourceAssets.find((source) => source.ext === ".stl")?.url ?? null,
     viewer,
+    viewers,
     download: assets.download ? `${base}/${slug}/downloads/${path.basename(assets.download)}` : null
   };
 }
 
-function findViewerAsset(sourceAssets) {
+function findViewerAssets(sourceAssets) {
   const priorities = [
     { type: "fbx", exts: [".fbx"] },
     { type: "step", exts: [".step", ".stp"] },
     { type: "stl", exts: [".stl"] }
   ];
-  for (const priority of priorities) {
-    const asset = sourceAssets.find((source) => priority.exts.includes(source.ext));
-    if (asset) return { ...asset, type: priority.type };
-  }
-  return null;
+  return priorities.flatMap((priority) =>
+    sourceAssets
+      .filter((source) => priority.exts.includes(source.ext))
+      .map((source) => ({ ...source, type: priority.type }))
+  );
+}
+
+function viewerTypeForExt(ext) {
+  if (ext === ".fbx") return "fbx";
+  if (ext === ".step" || ext === ".stp") return "step";
+  if (ext === ".stl") return "stl";
+  return "";
+}
+
+function sourceDownloadName(slug, source) {
+  const parsed = path.parse(source);
+  const partName = parsed.name
+    .replace(/[^A-Za-z0-9_-]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "") || "part";
+  return `${slug}_${partName}${parsed.ext.toLowerCase()}`;
 }
 
 async function resetGeneratedPublic() {

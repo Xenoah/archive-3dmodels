@@ -4,11 +4,11 @@ import path from "node:path";
 import {
   CONTENT_MODELS_DIR,
   FORBIDDEN_EXTENSIONS,
+  FORBIDDEN_FILENAMES,
   IMAGE_EXTENSIONS,
   INBOX_DIR,
   PREVIEW_EXTENSIONS,
-  SLUG_RE,
-  SOURCE_EXTENSIONS
+  SLUG_RE
 } from "./lib/constants.mjs";
 import {
   currentDateTime,
@@ -43,17 +43,23 @@ if (existsSync(modelDir) && !merge) {
 }
 
 const entries = (await readdir(inboxDir, { withFileTypes: true })).filter((entry) => entry.isFile());
-const forbidden = entries.filter((entry) => FORBIDDEN_EXTENSIONS.has(path.extname(entry.name).toLowerCase()));
+const forbidden = entries.filter(
+  (entry) =>
+    FORBIDDEN_FILENAMES.has(entry.name.toLowerCase()) ||
+    FORBIDDEN_EXTENSIONS.has(path.extname(entry.name).toLowerCase())
+);
 if (forbidden.length > 0) {
-  for (const entry of forbidden) console.error(`[ERROR] ${entry.name}: forbidden extension.`);
+  for (const entry of forbidden) console.error(`[ERROR] ${entry.name}: forbidden file.`);
   process.exit(1);
 }
 
 const images = entries.filter((entry) => IMAGE_EXTENSIONS.has(path.extname(entry.name).toLowerCase()));
 const previews = entries.filter((entry) => PREVIEW_EXTENSIONS.has(path.extname(entry.name).toLowerCase()));
-const sources = entries.filter((entry) => SOURCE_EXTENSIONS.has(path.extname(entry.name).toLowerCase()));
-const markdown = sources.find((entry) => path.extname(entry.name).toLowerCase() === ".md");
-const sourceFiles = sources.filter((entry) => path.extname(entry.name).toLowerCase() !== ".md");
+const markdown = entries.find((entry) => path.extname(entry.name).toLowerCase() === ".md");
+const sourceFiles = entries.filter((entry) => {
+  const ext = path.extname(entry.name).toLowerCase();
+  return !IMAGE_EXTENSIONS.has(ext) && !PREVIEW_EXTENSIONS.has(ext) && ext !== ".md";
+});
 const hasFbxSource = sourceFiles.some((entry) => path.extname(entry.name).toLowerCase() === ".fbx");
 const modelSource = selectModelSource([...sourceFiles, ...previews]);
 const modelCreatedDate = modelSource
@@ -179,7 +185,7 @@ async function initialMarkdown(slugValue, sourceMarkdown, dateFallbacks) {
 
 function selectModelSource(files) {
   const priorities = [".fbx", ".step", ".stp", ".stl", ".3mf", ".obj", ".glb"];
-  return [...files].sort((left, right) => {
+  return files.filter((file) => priorities.includes(path.extname(file.name).toLowerCase())).sort((left, right) => {
     const leftIndex = priorities.indexOf(path.extname(left.name).toLowerCase());
     const rightIndex = priorities.indexOf(path.extname(right.name).toLowerCase());
     return (leftIndex === -1 ? 999 : leftIndex) - (rightIndex === -1 ? 999 : rightIndex) || left.name.localeCompare(right.name);
