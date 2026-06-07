@@ -1,5 +1,5 @@
 import { existsSync } from "node:fs";
-import { copyFile, mkdir, readdir, readFile, stat, writeFile } from "node:fs/promises";
+import { copyFile, mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import {
   CONTENT_MODELS_DIR,
@@ -10,6 +10,7 @@ import {
   SLUG_RE,
   SOURCE_EXTENSIONS
 } from "./lib/constants.mjs";
+import { currentYearMonth, fileCreatedYearMonth, yearMonthValue } from "./lib/date-utils.mjs";
 import { parseFrontmatter, stringifyFrontmatter } from "./lib/frontmatter.mjs";
 import { titleFromSlug } from "./lib/model-utils.mjs";
 
@@ -48,7 +49,7 @@ const markdown = sources.find((entry) => path.extname(entry.name).toLowerCase() 
 const sourceFiles = sources.filter((entry) => path.extname(entry.name).toLowerCase() !== ".md");
 const hasFbxSource = sourceFiles.some((entry) => path.extname(entry.name).toLowerCase() === ".fbx");
 const modelSource = selectModelSource([...sourceFiles, ...previews]);
-const modelCreated = modelSource ? await fileYearMonth(path.join(inboxDir, modelSource.name)) : currentYearMonth();
+const modelCreated = modelSource ? await fileCreatedYearMonth(path.join(inboxDir, modelSource.name)) : currentYearMonth();
 const firstPhotoIndex = await nextPhotoIndex(path.join(modelDir, "photos"));
 
 const plans = [];
@@ -171,40 +172,6 @@ function selectModelSource(files) {
     const rightIndex = priorities.indexOf(path.extname(right.name).toLowerCase());
     return (leftIndex === -1 ? 999 : leftIndex) - (rightIndex === -1 ? 999 : rightIndex) || left.name.localeCompare(right.name);
   })[0] ?? null;
-}
-
-async function fileYearMonth(file) {
-  const fileStat = await stat(file);
-  const created = earliestFileDate(fileStat);
-  return formatYearMonth(created);
-}
-
-function earliestFileDate(fileStat) {
-  const candidates = [
-    Number.isNaN(fileStat.birthtimeMs) || fileStat.birthtimeMs <= 0 ? null : fileStat.birthtime,
-    Number.isNaN(fileStat.mtimeMs) || fileStat.mtimeMs <= 0 ? null : fileStat.mtime
-  ].filter(Boolean);
-  return candidates.sort((left, right) => left.getTime() - right.getTime())[0] ?? new Date();
-}
-
-function currentYearMonth() {
-  return formatYearMonth(new Date());
-}
-
-function formatYearMonth(date) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  return `${year}年${month}月`;
-}
-
-function yearMonthValue(value, fallback) {
-  if (typeof value !== "string" || value.trim() === "") return fallback;
-  const trimmed = value.trim();
-  const japanese = /^(\d{4})年(\d{1,2})月$/.exec(trimmed);
-  if (japanese) return `${japanese[1]}年${japanese[2].padStart(2, "0")}月`;
-  const parsed = new Date(trimmed);
-  if (!Number.isNaN(parsed.getTime())) return formatYearMonth(parsed);
-  return trimmed;
 }
 
 async function nextPhotoIndex(photosDir) {

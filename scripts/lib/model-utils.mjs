@@ -33,6 +33,7 @@ import {
   STATUSES,
   WARN_FILE_BYTES
 } from "./constants.mjs";
+import { fileCreatedYearMonth } from "./date-utils.mjs";
 import { parseFrontmatter } from "./frontmatter.mjs";
 import { containsRawHtml, renderMarkdown } from "./markdown.mjs";
 
@@ -336,8 +337,7 @@ async function sourceCreatedYearMonth(sources) {
   const modelSources = sources.filter((source) => [".fbx", ".step", ".stp", ".stl", ".3mf", ".obj", ".glb"].includes(path.extname(source).toLowerCase()));
   const source = selectPrimarySource(modelSources);
   if (!source) return "";
-  const fileStat = await stat(source);
-  return formatYearMonth(earliestFileDate(fileStat));
+  return fileCreatedYearMonth(source);
 }
 
 function selectPrimarySource(sources) {
@@ -347,20 +347,6 @@ function selectPrimarySource(sources) {
     const rightIndex = priorities.indexOf(path.extname(right).toLowerCase());
     return (leftIndex === -1 ? 999 : leftIndex) - (rightIndex === -1 ? 999 : rightIndex) || left.localeCompare(right);
   })[0] ?? null;
-}
-
-function earliestFileDate(fileStat) {
-  const candidates = [
-    Number.isNaN(fileStat.birthtimeMs) || fileStat.birthtimeMs <= 0 ? null : fileStat.birthtime,
-    Number.isNaN(fileStat.mtimeMs) || fileStat.mtimeMs <= 0 ? null : fileStat.mtime
-  ].filter(Boolean);
-  return candidates.sort((left, right) => left.getTime() - right.getTime())[0] ?? new Date();
-}
-
-function formatYearMonth(date) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  return `${year}年${month}月`;
 }
 
 async function findCover(dir) {
