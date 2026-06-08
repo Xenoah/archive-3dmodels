@@ -8,10 +8,18 @@ const listedModels = models.filter((model) => model.status === "public" || model
 const categories = [...new Set(listedModels.map((model) => model.category).filter(Boolean))].sort();
 const tags = [...new Set(listedModels.flatMap((model) => model.tags ?? []))].sort();
 const licenses = [...new Set(listedModels.map((model) => model.license).filter(Boolean))].sort();
+const suggestions = [
+  ...new Set(
+    listedModels
+      .flatMap((model) => [model.title, model.category, model.license, ...(model.tags ?? [])])
+      .filter(Boolean)
+  )
+].sort();
 const base = import.meta.env.BASE_URL.replace(/\/$/, "");
 const modelUrl = (slug) => `${base}/${encodeURIComponent(slug)}/`;
 const siteUrl = new URL(`${base}/`, Astro.site).href;
 const latest = listedModels.slice(0, 3);
+const defaultPageSize = 10;
 const collectionJsonLd = {
   "@context": "https://schema.org",
   "@type": "CollectionPage",
@@ -47,13 +55,13 @@ const collectionJsonLd = {
       <div class="creator-kicker">Xenoah Archive</div>
       <h1 id="page-title" data-lang-ja="Xenoah 3Dモデル" data-lang-en="Xenoah 3D Models">Xenoah 3Dモデル</h1>
       <p
-        data-lang-ja="Xenoah が制作・配布する3Dモデルファイルの軽量な静的アーカイブです。ページ、メタデータ、ギャラリー、ZIPダウンロードは Markdown とソースフォルダから生成されます。"
-        data-lang-en="A lightweight static archive for downloadable 3D model files created and distributed by Xenoah. Pages, metadata, galleries, and ZIP downloads are generated from Markdown and source folders."
+        data-lang-ja="Xenoah が制作・配布する3Dモデルファイルの軽量な静的アーカイブです。検索、プレビュー、ZIPダウンロードをこのページからすばやく使えます。"
+        data-lang-en="A lightweight static archive for downloadable 3D model files created and distributed by Xenoah. Search, preview, and download ZIP files from this page."
       >
-        Xenoah が制作・配布する3Dモデルファイルの軽量な静的アーカイブです。ページ、メタデータ、ギャラリー、ZIPダウンロードは Markdown とソースフォルダから生成されます。
+        Xenoah が制作・配布する3Dモデルファイルの軽量な静的アーカイブです。検索、プレビュー、ZIPダウンロードをこのページからすばやく使えます。
       </p>
       <div class="hero-actions">
-        <a class="button" href="#model-grid" data-lang-ja="モデルを見る" data-lang-en="Browse models">モデルを見る</a>
+        <a class="button" href="#model-results" data-lang-ja="モデルを見る" data-lang-en="Browse models">モデルを見る</a>
         <a class="ghost-button" href={`${base}/terms/`} data-lang-ja="ライセンス規約" data-lang-en="License terms">ライセンス規約</a>
       </div>
     </div>
@@ -88,188 +96,394 @@ const collectionJsonLd = {
     </aside>
   </section>
 
-  <form class="toolbar" id="model-filter" role="search">
-    <input
-      id="q"
-      type="search"
-      placeholder="タイトル、概要、タグで検索"
-      aria-label="キーワード検索"
-      data-lang-placeholder-ja="タイトル、概要、タグで検索"
-      data-lang-placeholder-en="Search title, summary, tag"
-      data-lang-aria-label-ja="キーワード検索"
-      data-lang-aria-label-en="Keyword search"
-    />
-    <select id="category" aria-label="カテゴリ" data-lang-aria-label-ja="カテゴリ" data-lang-aria-label-en="Category">
-      <option value="" data-lang-ja="すべてのカテゴリ" data-lang-en="All categories">すべてのカテゴリ</option>
-      {categories.map((category) => <option value={category}>{category}</option>)}
-    </select>
-    <select id="tag" aria-label="タグ" data-lang-aria-label-ja="タグ" data-lang-aria-label-en="Tag">
-      <option value="" data-lang-ja="すべてのタグ" data-lang-en="All tags">すべてのタグ</option>
-      {tags.map((tag) => <option value={tag}>{tag}</option>)}
-    </select>
-    <select id="license" aria-label="ライセンス" data-lang-aria-label-ja="ライセンス" data-lang-aria-label-en="License">
-      <option value="" data-lang-ja="すべてのライセンス" data-lang-en="All licenses">すべてのライセンス</option>
-      {licenses.map((license) => <option value={license}>{license}</option>)}
-    </select>
-    <select id="sort" aria-label="並び順" data-lang-aria-label-ja="並び順" data-lang-aria-label-en="Sort order">
-      <option value="updated-desc" data-lang-ja="更新が新しい順" data-lang-en="Newest first">更新が新しい順</option>
-      <option value="created-desc" data-lang-ja="作成が新しい順" data-lang-en="Created newest">作成が新しい順</option>
-      <option value="title-asc" data-lang-ja="名前 A-Z" data-lang-en="Name A-Z">名前 A-Z</option>
-      <option value="category-asc" data-lang-ja="カテゴリ" data-lang-en="Category">カテゴリ</option>
-    </select>
-  </form>
-
-  {
-    listedModels.length === 0 ? (
-      <div class="empty">
-        <strong data-lang-ja="モデルはまだありません。" data-lang-en="No models yet.">モデルはまだありません。</strong>
-        <p
-          data-lang-ja="content/models にモデルを追加するか、_inbox からファイルをインポートしてください。"
-          data-lang-en="Add a model under content/models or import files from _inbox."
-        >
-          content/models にモデルを追加するか、_inbox からファイルをインポートしてください。
-        </p>
+  <section class="archive-panel" id="model-results" aria-labelledby="results-title">
+    <div class="section-heading">
+      <div>
+        <p class="eyebrow">Library</p>
+        <h2 id="results-title" data-lang-ja="モデル一覧" data-lang-en="Models">モデル一覧</h2>
       </div>
-    ) : (
-      <section
-        class="model-grid"
-        id="model-grid"
-        aria-label="モデル一覧"
-        data-lang-aria-label-ja="モデル一覧"
-        data-lang-aria-label-en="Model list"
+      <p
+        class="result-count"
+        id="result-count"
+        data-lang-ja={`${listedModels.length} 件を表示中`}
+        data-lang-en={`Showing ${listedModels.length} items`}
       >
-        {listedModels.map((model) => (
-          <a
-            class="model-card"
-            href={modelUrl(model.slug)}
-            data-title={model.title.toLowerCase()}
-            data-summary={(model.summary || "").toLowerCase()}
-            data-body={(model.bodyText || "").toLowerCase()}
-            data-category={model.category}
-            data-tags={(model.tags ?? []).join(" ")}
-            data-license={model.license}
-            data-updated={model.updatedAt || model.updated || ""}
-            data-created={model.createdAt || model.created || ""}
-          >
-            <div class="thumb">
-              {model.status === "draft" && <div class="draft-badge">DRAFT</div>}
-              {model.assets.cover ? (
-                <img src={model.assets.cover} alt="" loading="lazy" />
-              ) : model.assets.viewer ? (
-                <>
-                  <div class="viewer-thumb">
-                    <ModelViewer source={model.assets.viewer} title={`${model.title} thumbnail preview`} variant="thumbnail" />
-                  </div>
-                  <div class="model-fallback viewer-off-fallback" aria-hidden="true">
-                    <div class="cube-mark">
-                      <span></span>
-                      <span></span>
-                      <span></span>
-                    </div>
-                    <strong>3D</strong>
-                  </div>
-                </>
-              ) : (
-                <div class="model-fallback" aria-hidden="true">
-                  <div class="cube-mark">
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                  </div>
-                  <strong>STL</strong>
-                </div>
-              )}
-            </div>
-            <div class="card-body">
-              <div>
-                <h2>{model.title}</h2>
-                {model.summary ? (
-                  <p class="summary">{model.summary}</p>
-                ) : (
-                  <p class="summary" data-lang-ja="概要はまだありません。" data-lang-en="No summary provided.">概要はまだありません。</p>
-                )}
-              </div>
-              <div class="meta-row">
-                <span class="pill">{model.category}</span>
-                <span class="pill">{model.license}</span>
-                {model.created && (
-                  <span class="pill"><span data-lang-ja="作成:" data-lang-en="created:">作成:</span> {model.created}</span>
-                )}
-                {model.updated && model.updated !== model.created && (
-                  <span class="pill"><span data-lang-ja="更新:" data-lang-en="updated:">更新:</span> {model.updated}</span>
-                )}
-              </div>
-              <div class="tag-row">
-                {(model.tags ?? []).slice(0, 5).map((tag) => <span class="pill">#{tag}</span>)}
-              </div>
-            </div>
-          </a>
+        {listedModels.length} 件を表示中
+      </p>
+    </div>
+
+    <form class="toolbar" id="model-filter" role="search">
+      <div class="search-field">
+        <input
+          id="q"
+          type="search"
+          placeholder="タイトル、概要、タグで検索"
+          aria-label="キーワード検索"
+          data-lang-placeholder-ja="タイトル、概要、タグで検索"
+          data-lang-placeholder-en="Search title, summary, tag"
+          data-lang-aria-label-ja="キーワード検索"
+          data-lang-aria-label-en="Keyword search"
+        />
+        <div class="suggestion-panel" id="search-suggestions" hidden>
+          {suggestions.map((suggestion) => (
+            <button type="button" data-suggestion={suggestion}>{suggestion}</button>
+          ))}
+        </div>
+      </div>
+      <select id="match-mode" aria-label="検索方式" data-lang-aria-label-ja="検索方式" data-lang-aria-label-en="Search mode">
+        <option value="partial" data-lang-ja="部分一致" data-lang-en="Partial">部分一致</option>
+        <option value="exact" data-lang-ja="完全一致" data-lang-en="Exact">完全一致</option>
+        <option value="fuzzy" data-lang-ja="あいまい検索" data-lang-en="Fuzzy">あいまい検索</option>
+      </select>
+      <select id="category" aria-label="カテゴリ" data-lang-aria-label-ja="カテゴリ" data-lang-aria-label-en="Category">
+        <option value="" data-lang-ja="すべてのカテゴリ" data-lang-en="All categories">すべてのカテゴリ</option>
+        {categories.map((category) => <option value={category}>{category}</option>)}
+      </select>
+      <select id="tag" aria-label="タグ" data-lang-aria-label-ja="タグ" data-lang-aria-label-en="Tag">
+        <option value="" data-lang-ja="すべてのタグ" data-lang-en="All tags">すべてのタグ</option>
+        {tags.map((tag) => <option value={tag}>{tag}</option>)}
+      </select>
+      <select id="license" aria-label="ライセンス" data-lang-aria-label-ja="ライセンス" data-lang-aria-label-en="License">
+        <option value="" data-lang-ja="すべてのライセンス" data-lang-en="All licenses">すべてのライセンス</option>
+        {licenses.map((license) => <option value={license}>{license}</option>)}
+      </select>
+      <select id="sort" aria-label="並び順" data-lang-aria-label-ja="並び順" data-lang-aria-label-en="Sort order">
+        <option value="updated-desc" data-lang-ja="更新が新しい順" data-lang-en="Newest first">更新が新しい順</option>
+        <option value="created-desc" data-lang-ja="作成が新しい順" data-lang-en="Created newest">作成が新しい順</option>
+        <option value="title-asc" data-lang-ja="名前 A-Z" data-lang-en="Name A-Z">名前 A-Z</option>
+        <option value="category-asc" data-lang-ja="カテゴリ" data-lang-en="Category">カテゴリ</option>
+      </select>
+      <select id="page-size" aria-label="表示件数" data-lang-aria-label-ja="表示件数" data-lang-aria-label-en="Items per page">
+        {[10, 25, 50, 100, 250, 500].map((size) => (
+          <option value={size} selected={size === defaultPageSize}>{size}</option>
         ))}
-      </section>
-    )
-  }
+      </select>
+      <div class="view-switch" role="group" aria-label="表示形式" data-lang-aria-label-ja="表示形式" data-lang-aria-label-en="View mode">
+        <button class="icon-toggle is-active" type="button" data-view-mode="grid" aria-pressed="true" title="Grid">▦</button>
+        <button class="icon-toggle" type="button" data-view-mode="list" aria-pressed="false" title="List">☰</button>
+      </div>
+    </form>
+
+    <div class="pager" aria-live="polite">
+      <button class="link-button" type="button" data-page-action="prev" data-lang-ja="前へ" data-lang-en="Previous">前へ</button>
+      <span data-page-status>1 / 1</span>
+      <button class="link-button" type="button" data-page-action="next" data-lang-ja="次へ" data-lang-en="Next">次へ</button>
+    </div>
+
+    {
+      listedModels.length === 0 ? (
+        <div class="empty">
+          <strong data-lang-ja="モデルはまだありません。" data-lang-en="No models yet.">モデルはまだありません。</strong>
+          <p
+            data-lang-ja="content/models にモデルを追加するか、_inbox からファイルをインポートしてください。"
+            data-lang-en="Add a model under content/models or import files from _inbox."
+          >
+            content/models にモデルを追加するか、_inbox からファイルをインポートしてください。
+          </p>
+        </div>
+      ) : (
+        <section
+          class="model-grid"
+          id="model-grid"
+          aria-label="モデル一覧"
+          data-view="grid"
+          data-lang-aria-label-ja="モデル一覧"
+          data-lang-aria-label-en="Model list"
+        >
+          {listedModels.map((model, index) => {
+            const pageHref = modelUrl(model.slug);
+            return (
+              <article
+                class="model-card"
+                data-title={model.title}
+                data-summary={model.summary || ""}
+                data-body={model.bodyText || ""}
+                data-category={model.category}
+                data-tags={(model.tags ?? []).join("|")}
+                data-license={model.license}
+                data-updated={model.updatedAt || model.updated || ""}
+                data-created={model.createdAt || model.created || ""}
+              >
+                <a class="card-main" href={pageHref}>
+                  <div class="thumb">
+                    {model.status === "draft" && <div class="draft-badge">DRAFT</div>}
+                    {model.assets.cover ? (
+                      <img src={model.assets.cover} alt="" loading={index < defaultPageSize ? "eager" : "lazy"} />
+                    ) : model.assets.viewer ? (
+                      <>
+                        <div class="viewer-thumb">
+                          <ModelViewer
+                            source={model.assets.viewer}
+                            title={`${model.title} thumbnail preview`}
+                            variant="thumbnail"
+                            autoload={false}
+                          />
+                        </div>
+                        <div class="model-fallback viewer-off-fallback" aria-hidden="true">
+                          <div class="cube-mark">
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                          </div>
+                          <strong>3D</strong>
+                        </div>
+                      </>
+                    ) : (
+                      <div class="model-fallback" aria-hidden="true">
+                        <div class="cube-mark">
+                          <span></span>
+                          <span></span>
+                          <span></span>
+                        </div>
+                        <strong>STL</strong>
+                      </div>
+                    )}
+                  </div>
+                  <div class="card-body">
+                    <div>
+                      <h3>{model.title}</h3>
+                      {model.summary ? (
+                        <p class="summary">{model.summary}</p>
+                      ) : (
+                        <p class="summary" data-lang-ja="概要はまだありません。" data-lang-en="No summary provided.">概要はまだありません。</p>
+                      )}
+                    </div>
+                    <div class="meta-row">
+                      <span class="pill">{model.category}</span>
+                      <span class="pill">{model.license}</span>
+                      {model.created && (
+                        <span class="pill"><span data-lang-ja="作成:" data-lang-en="created:">作成:</span> {model.created}</span>
+                      )}
+                      {model.updated && model.updated !== model.created && (
+                        <span class="pill"><span data-lang-ja="更新:" data-lang-en="updated:">更新:</span> {model.updated}</span>
+                      )}
+                    </div>
+                    <div class="tag-row">
+                      {(model.tags ?? []).slice(0, 5).map((tag) => <span class="pill">#{tag}</span>)}
+                    </div>
+                  </div>
+                </a>
+              </article>
+            );
+          })}
+        </section>
+      )
+    }
+    <div class="pager bottom-pager" aria-live="polite">
+      <button class="link-button" type="button" data-page-action="prev" data-lang-ja="前へ" data-lang-en="Previous">前へ</button>
+      <span data-page-status>1 / 1</span>
+      <button class="link-button" type="button" data-page-action="next" data-lang-ja="次へ" data-lang-en="Next">次へ</button>
+    </div>
+  </section>
 
   <script>
     const form = document.querySelector("#model-filter");
+    const grid = document.querySelector("#model-grid");
     const cards = [...document.querySelectorAll(".model-card")];
+    const resultCount = document.querySelector("#result-count");
+    const pageStatuses = [...document.querySelectorAll("[data-page-status]")];
+    const pageButtons = [...document.querySelectorAll("[data-page-action]")];
+    const suggestionPanel = document.querySelector("#search-suggestions");
+    const suggestionButtons = [...document.querySelectorAll("[data-suggestion]")];
+    const viewButtons = [...document.querySelectorAll("[data-view-mode]")];
     const fields = {
       q: document.querySelector("#q"),
+      matchMode: document.querySelector("#match-mode"),
       category: document.querySelector("#category"),
       tag: document.querySelector("#tag"),
       license: document.querySelector("#license"),
-      sort: document.querySelector("#sort")
+      sort: document.querySelector("#sort"),
+      pageSize: document.querySelector("#page-size")
+    };
+    const state = {
+      page: 1,
+      view: "grid",
+      suggestionLimit: 8
     };
 
-    function filterCards() {
-      const q = fields.q.value.trim().toLowerCase();
+    const normalize = (value) =>
+      String(value || "")
+        .normalize("NFKC")
+        .toLocaleLowerCase("ja-JP")
+        .trim();
+
+    function boundedDistance(a, b, maxDistance) {
+      if (Math.abs(a.length - b.length) > maxDistance) return maxDistance + 1;
+      let previous = Array.from({ length: b.length + 1 }, (_, index) => index);
+      for (let i = 1; i <= a.length; i++) {
+        const current = [i];
+        let rowMin = current[0];
+        for (let j = 1; j <= b.length; j++) {
+          const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+          const next = Math.min(previous[j] + 1, current[j - 1] + 1, previous[j - 1] + cost);
+          current[j] = next;
+          rowMin = Math.min(rowMin, next);
+        }
+        if (rowMin > maxDistance) return maxDistance + 1;
+        previous = current;
+      }
+      return previous[b.length];
+    }
+
+    function isSubsequence(needle, haystack) {
+      let offset = 0;
+      for (const char of needle) {
+        offset = haystack.indexOf(char, offset);
+        if (offset === -1) return false;
+        offset++;
+      }
+      return true;
+    }
+
+    function matchesQuery(card, query, mode) {
+      if (!query) return true;
+      const fields = [
+        card.dataset.title,
+        card.dataset.summary,
+        card.dataset.body,
+        card.dataset.category,
+        card.dataset.license,
+        ...(card.dataset.tags || "").split("|")
+      ].map(normalize);
+      const haystack = fields.join(" ");
+      const tokens = haystack.split(/[\s,;#/]+/).filter(Boolean);
+
+      if (mode === "exact") return fields.some((field) => field === query) || tokens.includes(query);
+      if (mode === "partial") return haystack.includes(query);
+
+      const maxDistance = Math.max(1, Math.floor(query.length * 0.25));
+      return (
+        haystack.includes(query) ||
+        isSubsequence(query, haystack) ||
+        tokens.some((token) => boundedDistance(query, token, maxDistance) <= maxDistance)
+      );
+    }
+
+    function compareCards(a, b) {
+      const sort = fields.sort.value;
+      const titleA = normalize(a.dataset.title);
+      const titleB = normalize(b.dataset.title);
+      if (sort === "title-asc") return titleA.localeCompare(titleB, "ja");
+      if (sort === "category-asc") {
+        return `${normalize(a.dataset.category)} ${titleA}`.localeCompare(`${normalize(b.dataset.category)} ${titleB}`, "ja");
+      }
+      if (sort === "created-desc") return (b.dataset.created || "").localeCompare(a.dataset.created || "") || titleA.localeCompare(titleB, "ja");
+      return (b.dataset.updated || "").localeCompare(a.dataset.updated || "") || titleA.localeCompare(titleB, "ja");
+    }
+
+    function visibleCards() {
+      const query = normalize(fields.q.value);
       const category = fields.category.value;
       const tag = fields.tag.value;
       const license = fields.license.value;
-      const sort = fields.sort.value;
-      const grid = document.querySelector("#model-grid");
+      const mode = fields.matchMode.value;
 
-      const sortedCards = [...cards].sort((a, b) => {
-        if (sort === "title-asc") return a.dataset.title.localeCompare(b.dataset.title);
-        if (sort === "category-asc") {
-          return `${a.dataset.category} ${a.dataset.title}`.localeCompare(`${b.dataset.category} ${b.dataset.title}`);
-        }
-        if (sort === "created-desc") {
-          return (b.dataset.created || "").localeCompare(a.dataset.created || "") || a.dataset.title.localeCompare(b.dataset.title);
-        }
-        return (b.dataset.updated || "").localeCompare(a.dataset.updated || "") || a.dataset.title.localeCompare(b.dataset.title);
-      });
-      for (const card of sortedCards) grid?.append(card);
+      return cards
+        .filter((card) => {
+          const tags = (card.dataset.tags || "").split("|");
+          return (
+            matchesQuery(card, query, mode) &&
+            (!category || card.dataset.category === category) &&
+            (!tag || tags.includes(tag)) &&
+            (!license || card.dataset.license === license)
+          );
+        })
+        .sort(compareCards);
+    }
 
-      for (const card of cards) {
-        const haystack = `${card.dataset.title} ${card.dataset.summary} ${card.dataset.tags} ${card.dataset.body}`;
-        const visible =
-          (!q || haystack.includes(q)) &&
-          (!category || card.dataset.category === category) &&
-          (!tag || card.dataset.tags.split(" ").includes(tag)) &&
-          (!license || card.dataset.license === license);
-        card.hidden = !visible;
+    function startVisibleViewers(items) {
+      if (document.documentElement.dataset.viewerEnabled === "false") return;
+      for (const card of items) {
+        const viewer = card.querySelector(".model-viewer-3d");
+        if (!viewer || viewer.dataset.loaded === "true") continue;
+        if (window.archiveModelViewerStart) {
+          window.archiveModelViewerStart(viewer);
+        } else {
+          window.dispatchEvent(new CustomEvent("archive-model-viewer-activate", { detail: { root: viewer } }));
+        }
       }
     }
 
-    form?.addEventListener("input", filterCards);
+    function renderSuggestions() {
+      if (!suggestionPanel) return;
+      const query = normalize(fields.q.value);
+      let shown = 0;
+      for (const button of suggestionButtons) {
+        const visible = query && normalize(button.dataset.suggestion).includes(query) && shown < state.suggestionLimit;
+        button.hidden = !visible;
+        if (visible) shown++;
+      }
+      suggestionPanel.hidden = shown === 0;
+    }
 
-    for (const card of cards) {
-      const thumb = card.querySelector(".thumb");
-      thumb.addEventListener("pointermove", (event) => {
-        const rect = thumb.getBoundingClientRect();
-        const x = ((event.clientX - rect.left) / rect.width - 0.5) * 2;
-        const y = ((event.clientY - rect.top) / rect.height - 0.5) * 2;
-        thumb.style.setProperty("--thumb-rotate-x", `${(-y * 13).toFixed(2)}deg`);
-        thumb.style.setProperty("--thumb-rotate-y", `${(x * 16).toFixed(2)}deg`);
-        thumb.style.setProperty("--thumb-shift-x", `${(x * 8).toFixed(2)}px`);
-        thumb.style.setProperty("--thumb-shift-y", `${(y * 8).toFixed(2)}px`);
-      });
-      thumb.addEventListener("pointerleave", () => {
-        thumb.style.removeProperty("--thumb-rotate-x");
-        thumb.style.removeProperty("--thumb-rotate-y");
-        thumb.style.removeProperty("--thumb-shift-x");
-        thumb.style.removeProperty("--thumb-shift-y");
+    function render() {
+      if (!grid) return;
+      const filtered = visibleCards();
+      const pageSize = Number(fields.pageSize.value) || 25;
+      const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize));
+      state.page = Math.min(Math.max(1, state.page), pageCount);
+      const start = (state.page - 1) * pageSize;
+      const pageItems = filtered.slice(start, start + pageSize);
+
+      for (const card of cards) card.hidden = true;
+      for (const card of filtered) grid.append(card);
+      for (const card of pageItems) card.hidden = false;
+      grid.dataset.view = state.view;
+      startVisibleViewers(pageItems);
+
+      if (resultCount) {
+        resultCount.textContent = `${filtered.length} / ${cards.length} 件`;
+        resultCount.dataset.langJa = `${filtered.length} / ${cards.length} 件`;
+        resultCount.dataset.langEn = `${filtered.length} of ${cards.length} items`;
+      }
+      for (const status of pageStatuses) status.textContent = `${state.page} / ${pageCount}`;
+      for (const button of pageButtons) {
+        button.disabled =
+          (button.dataset.pageAction === "prev" && state.page <= 1) ||
+          (button.dataset.pageAction === "next" && state.page >= pageCount);
+      }
+      renderSuggestions();
+    }
+
+    function resetAndRender() {
+      state.page = 1;
+      render();
+    }
+
+    form?.addEventListener("input", resetAndRender);
+    form?.addEventListener("change", resetAndRender);
+    for (const button of suggestionButtons) {
+      button.addEventListener("click", () => {
+        fields.q.value = button.dataset.suggestion || "";
+        state.page = 1;
+        render();
+        suggestionPanel.hidden = true;
       });
     }
+    fields.q?.addEventListener("blur", () => {
+      window.setTimeout(() => {
+        if (suggestionPanel) suggestionPanel.hidden = true;
+      }, 120);
+    });
+    fields.q?.addEventListener("focus", renderSuggestions);
+    for (const button of pageButtons) {
+      button.addEventListener("click", () => {
+        state.page += button.dataset.pageAction === "prev" ? -1 : 1;
+        render();
+      });
+    }
+    for (const button of viewButtons) {
+      button.addEventListener("click", () => {
+        state.view = button.dataset.viewMode || "grid";
+        for (const item of viewButtons) {
+          const active = item === button;
+          item.classList.toggle("is-active", active);
+          item.setAttribute("aria-pressed", String(active));
+        }
+        render();
+      });
+    }
+    window.addEventListener("archive-viewer-preference-change", render);
+    render();
   </script>
 </BaseLayout>

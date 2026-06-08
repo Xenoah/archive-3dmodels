@@ -16,6 +16,11 @@ const isThumbnail = variant === "thumbnail";
 >
   <canvas aria-label={title}></canvas>
   <div class="model-viewer-loading" aria-hidden="true"></div>
+  <div class="model-viewer-axis" aria-hidden="true">
+    <span class="axis-line axis-x">X</span>
+    <span class="axis-line axis-y">Y</span>
+    <span class="axis-line axis-z">Z</span>
+  </div>
   {
     isThumbnail ? (
       <span
@@ -26,6 +31,11 @@ const isThumbnail = variant === "thumbnail";
         {source.type.toUpperCase()} を読み込み中
       </span>
     ) : (
+      <>
+      <div class="model-viewer-links" aria-label="Preview fallback links">
+        <a href={source.url} data-lang-ja="ファイルを開く" data-lang-en="Open file">ファイルを開く</a>
+        <a href={source.url} download={source.downloadName || source.name} data-lang-ja="単体DL" data-lang-en="Download">単体DL</a>
+      </div>
       <div class="model-viewer-ui">
         <span
           class="model-viewer-status"
@@ -67,18 +77,19 @@ const isThumbnail = variant === "thumbnail";
           </select>
         </div>
       </div>
+      </>
     )
   }
 </div>
 
 <script>
-  import * as THREE from "three";
-  import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
-  import { FBXLoader } from "three/examples/jsm/loaders/FBXLoader.js";
-  import { STLLoader } from "three/examples/jsm/loaders/STLLoader.js";
-
   const initialized = new WeakSet();
   let occtPromise = null;
+  let threePromise = null;
+  let THREE;
+  let OrbitControls;
+  let FBXLoader;
+  let STLLoader;
 
   function currentLanguage() {
     return window.archiveLanguage?.get?.() === "en" ? "en" : "ja";
@@ -121,12 +132,12 @@ const isThumbnail = variant === "thumbnail";
       this.wireframe = false;
       this.materialMode = "original";
       this.lightingMode = "studio";
-      this.hoverRotation = null;
       this.meshes = [];
       window.addEventListener("archive-language-change", () => updateViewerStatus(this.root));
     }
 
     async start() {
+      await loadThreeModules();
       this.createScene();
       this.installEvents();
       const object = await this.loadObject();
@@ -137,14 +148,17 @@ const isThumbnail = variant === "thumbnail";
       this.applyLighting();
       this.fitCamera(object);
       this.setStatus("preview");
+      this.root.dataset.loaded = "true";
       this.root.classList.add("is-loaded");
       this.renderer.setAnimationLoop(() => this.draw());
     }
 
     createScene() {
       this.scene = new THREE.Scene();
+      this.scene.up.set(0, 0, 1);
       this.scene.background = null;
       this.camera = new THREE.PerspectiveCamera(42, 1, 0.01, 100000);
+      this.camera.up.set(0, 0, 1);
       this.camera.position.set(3.2, 2.5, 3.4);
 
       this.renderer = new THREE.WebGLRenderer({ canvas: this.canvas, antialias: true, alpha: true });
@@ -158,6 +172,7 @@ const isThumbnail = variant === "thumbnail";
       this.controls.enabled = !this.isThumbnail;
       this.controls.autoRotate = this.spin;
       this.controls.autoRotateSpeed = 1.3;
+      this.controls.screenSpacePanning = false;
 
       this.ambientLight = new THREE.AmbientLight(0xffffff, 0.45);
       this.hemiLight = new THREE.HemisphereLight(0xffffff, 0x66706c, 1.0);
@@ -184,17 +199,6 @@ const isThumbnail = variant === "thumbnail";
         this.lightingMode = event.target.value;
         this.applyLighting();
       });
-      if (this.isThumbnail) {
-        this.root.addEventListener("pointermove", (event) => {
-          const rect = this.root.getBoundingClientRect();
-          const x = ((event.clientX - rect.left) / rect.width - 0.5) * 2;
-          const y = ((event.clientY - rect.top) / rect.height - 0.5) * 2;
-          this.hoverRotation = { x: y * Math.PI * 0.62, y: x * Math.PI * 1.15 };
-        });
-        this.root.addEventListener("pointerleave", () => {
-          this.hoverRotation = null;
-        });
-      }
     }
 
     async loadObject() {
@@ -241,13 +245,13 @@ const isThumbnail = variant === "thumbnail";
       const response = await fetch(this.src);
       if (!response.ok) throw new Error(`Failed to fetch STEP: ${response.status}`);
       const buffer = new Uint8Array(await response.arrayBuffer());
-      const result = occt.ReadStepFile(buffer, {
+      const result = await occt.ReadStepFile(buffer, {
         linearUnit: "millimeter",
         linearDeflectionType: "bounding_box_ratio",
         linearDeflection: 0.0008,
         angularDeflection: 0.35
       });
-      if (!result.success) throw new Error("STEP import failed");
+      if (result?.success === false || !Array.isArray(result?.meshes)) throw new Error("STEP import failed");
       const group = new THREE.Group();
       for (const mesh of result.meshes ?? []) group.add(buildStepMesh(mesh));
       return group;
@@ -316,10 +320,11 @@ const isThumbnail = variant === "thumbnail";
       const size = box.getSize(new THREE.Vector3());
       object.position.sub(center);
       const radius = Math.max(size.x, size.y, size.z, 1);
-      const distance = radius * 1.8;
+      const distance = radius * (this.isThumbnail ? 5.2 : 3.1);
       this.camera.near = Math.max(distance / 1000, 0.01);
       this.camera.far = distance * 1000;
-      this.camera.position.set(distance * 0.9, distance * 0.68, distance * 0.92);
+      this.camera.up.set(0, 0, 1);
+      this.camera.position.set(distance * 0.9, distance * -1.05, distance * 0.72);
       this.camera.updateProjectionMatrix();
       this.controls.target.set(0, 0, 0);
       this.controls.update();
@@ -336,12 +341,6 @@ const isThumbnail = variant === "thumbnail";
         this.camera.updateProjectionMatrix();
       }
       this.controls.update();
-      if (this.isThumbnail && this.model) {
-        const targetX = this.hoverRotation?.x ?? 0.15;
-        const targetY = this.hoverRotation?.y ?? -0.45;
-        this.model.rotation.x += (targetX - this.model.rotation.x) * 0.18;
-        this.model.rotation.y += (targetY - this.model.rotation.y) * 0.18;
-      }
       this.renderer.render(this.scene, this.camera);
     }
 
@@ -383,6 +382,23 @@ const isThumbnail = variant === "thumbnail";
     return occtPromise;
   }
 
+  async function loadThreeModules() {
+    if (!threePromise) {
+      threePromise = Promise.all([
+        import("three"),
+        import("three/examples/jsm/controls/OrbitControls.js"),
+        import("three/examples/jsm/loaders/FBXLoader.js"),
+        import("three/examples/jsm/loaders/STLLoader.js")
+      ]).then(([three, orbit, fbx, stl]) => {
+        THREE = three;
+        OrbitControls = orbit.OrbitControls;
+        FBXLoader = fbx.FBXLoader;
+        STLLoader = stl.STLLoader;
+      });
+    }
+    return threePromise;
+  }
+
   function loadScript(src) {
     if (document.querySelector(`script[src="${src}"]`)) return Promise.resolve();
     return new Promise((resolve, reject) => {
@@ -404,6 +420,7 @@ const isThumbnail = variant === "thumbnail";
     initialized.add(root);
     new ArchiveModelViewer(root).start().catch((error) => {
       root.dataset.viewerStatus = "failed";
+      root.dataset.loaded = "true";
       updateViewerStatus(root);
       root.classList.add("is-loaded");
       console.error(error);

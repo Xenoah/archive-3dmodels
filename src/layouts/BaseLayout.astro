@@ -56,6 +56,9 @@ const jsonLdItems = [defaultJsonLd, ...(Array.isArray(jsonLd) ? jsonLd : [jsonLd
     {imageUrl && <meta name="twitter:image" content={imageUrl} />}
     {jsonLdItems.map((item) => <script type="application/ld+json" set:html={JSON.stringify(item)} />)}
     <script>
+      const savedTheme = localStorage.getItem("archive-3dmodels-theme");
+      const prefersDark = window.matchMedia?.("(prefers-color-scheme: dark)").matches;
+      document.documentElement.dataset.theme = savedTheme || (prefersDark ? "dark" : "light");
       const savedViewer = localStorage.getItem("archive-3dmodels-viewer");
       document.documentElement.dataset.viewerEnabled = savedViewer === "off" ? "false" : "true";
     </script>
@@ -73,7 +76,7 @@ const jsonLdItems = [defaultJsonLd, ...(Array.isArray(jsonLd) ? jsonLd : [jsonLd
     <link rel="alternate" type="application/rss+xml" title="3D Models RSS" href={`${base}/rss.xml`} />
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://www.google-analytics.com https://www.googletagmanager.com; connect-src 'self' https://www.google-analytics.com https://www.googletagmanager.com; frame-ancestors 'none'; base-uri 'self'; form-action 'none';"
+      content="default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://www.googletagmanager.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://www.google-analytics.com https://www.googletagmanager.com; connect-src 'self' https://www.google-analytics.com https://www.googletagmanager.com; frame-ancestors 'none'; base-uri 'self'; form-action 'none';"
     />
     <title>{title}</title>
   </head>
@@ -99,6 +102,16 @@ const jsonLdItems = [defaultJsonLd, ...(Array.isArray(jsonLd) ? jsonLd : [jsonLd
             >
               3D ON
             </button>
+            <button
+              type="button"
+              class="viewer-switch"
+              data-theme-switch
+              aria-pressed="false"
+              data-lang-ja="DARK"
+              data-lang-en="DARK"
+            >
+              DARK
+            </button>
             <div class="language-switch" aria-label="Language">
               <button type="button" data-lang-switch="ja" aria-pressed="true">JP</button>
               <button type="button" data-lang-switch="en" aria-pressed="false">EN</button>
@@ -123,6 +136,7 @@ const jsonLdItems = [defaultJsonLd, ...(Array.isArray(jsonLd) ? jsonLd : [jsonLd
     <script define:vars={{ title, titleEn, description, descriptionEn }}>
       const languageKey = "archive-3dmodels-language";
       const viewerKey = "archive-3dmodels-viewer";
+      const themeKey = "archive-3dmodels-theme";
       const supportedLanguages = new Set(["ja", "en"]);
 
       function getSavedLanguage() {
@@ -191,6 +205,25 @@ const jsonLdItems = [defaultJsonLd, ...(Array.isArray(jsonLd) ? jsonLd : [jsonLd
         });
       });
 
+      function applyTheme(theme) {
+        const nextTheme = theme === "dark" ? "dark" : "light";
+        document.documentElement.dataset.theme = nextTheme;
+        localStorage.setItem(themeKey, nextTheme);
+        document.querySelectorAll("[data-theme-switch]").forEach((button) => {
+          const dark = nextTheme === "dark";
+          button.setAttribute("aria-pressed", dark ? "true" : "false");
+          button.dataset.langJa = dark ? "LIGHT" : "DARK";
+          button.dataset.langEn = dark ? "LIGHT" : "DARK";
+          button.textContent = dark ? "LIGHT" : "DARK";
+        });
+      }
+
+      document.querySelectorAll("[data-theme-switch]").forEach((button) => {
+        button.addEventListener("click", () => {
+          applyTheme(document.documentElement.dataset.theme === "dark" ? "light" : "dark");
+        });
+      });
+
       window.archiveLanguage = {
         get: () => document.documentElement.dataset.lang || "ja",
         apply: applyLanguage
@@ -199,8 +232,13 @@ const jsonLdItems = [defaultJsonLd, ...(Array.isArray(jsonLd) ? jsonLd : [jsonLd
         get: () => document.documentElement.dataset.viewerEnabled !== "false",
         apply: applyViewerPreference
       };
+      window.archiveTheme = {
+        get: () => document.documentElement.dataset.theme || "light",
+        apply: applyTheme
+      };
 
       applyViewerPreference(localStorage.getItem(viewerKey) !== "off");
+      applyTheme(localStorage.getItem(themeKey) || document.documentElement.dataset.theme || "light");
       applyLanguage(getSavedLanguage());
     </script>
   </body>

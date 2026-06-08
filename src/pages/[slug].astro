@@ -285,12 +285,54 @@ const breadcrumbJsonLd = {
         </p>
       </div>
     </div>
-    <a class="button" href={model.assets.download || "#"} aria-disabled={model.assets.download ? "false" : "true"}>
+    <button class="button" type="button" data-download-dialog-open disabled={!model.assets.download}>
       <span data-lang-ja="ZIPをダウンロード" data-lang-en="Download ZIP">ZIPをダウンロード</span>
+    </button>
+    <a class="ghost-button" href={model.assets.download || "#"} aria-disabled={model.assets.download ? "false" : "true"}>
+      <span data-lang-ja="直接リンク" data-lang-en="Direct link">直接リンク</span>
     </a>
+    <dialog class="download-dialog" id="download-dialog" aria-labelledby="download-dialog-title">
+      <div class="dialog-card">
+        <div class="dialog-head">
+          <h2 id="download-dialog-title" data-lang-ja="ダウンロード前の確認" data-lang-en="Before downloading">ダウンロード前の確認</h2>
+          <button class="icon-toggle" type="button" data-download-dialog-close aria-label="Close">×</button>
+        </div>
+        <p
+          class="summary"
+          data-lang-ja="下記の注意事項を確認したうえでZIPをダウンロードしてください。"
+          data-lang-en="Review the notice below before downloading the ZIP file."
+        >
+          下記の注意事項を確認したうえでZIPをダウンロードしてください。
+        </p>
+        <div class="notice-scrollbox compact" tabindex="0" role="region" aria-label="Download notice">
+          <p><strong>日本語:</strong> このモデルは現状のまま提供されます。利用、加工、印刷、組み立て、再配布、商用利用などで発生した損害やトラブルについて、作者 Xenoah は責任を負いません。ライセンス条件と安全性を利用者自身で確認してください。</p>
+          <p><strong>English:</strong> This model is provided as-is. Xenoah is not responsible for any damage, trouble, failure, or loss caused by downloading, modifying, printing, assembling, redistributing, commercially using, or otherwise using the files. You are responsible for reviewing the license terms and safety.</p>
+        </div>
+        <div class="download-actions">
+          <a class="button" href={model.assets.download || "#"} aria-disabled={model.assets.download ? "false" : "true"}>
+            <span data-lang-ja="同意してZIPをダウンロード" data-lang-en="Agree and download ZIP">同意してZIPをダウンロード</span>
+          </a>
+          <button class="ghost-button" type="button" data-download-dialog-close data-lang-ja="閉じる" data-lang-en="Close">閉じる</button>
+        </div>
+      </div>
+    </dialog>
   </section>
 
   <script>
+    const downloadDialog = document.querySelector("#download-dialog");
+    document.querySelectorAll("[data-download-dialog-open]").forEach((button) => {
+      button.addEventListener("click", () => {
+        if (downloadDialog?.showModal) {
+          downloadDialog.showModal();
+        } else {
+          location.hash = "download-notice";
+        }
+      });
+    });
+    document.querySelectorAll("[data-download-dialog-close]").forEach((button) => {
+      button.addEventListener("click", () => downloadDialog?.close?.());
+    });
+
     document.querySelectorAll("[data-viewer-tabs]").forEach((tabs) => {
       const viewer = tabs.closest(".viewer");
       const panels = [...viewer.querySelectorAll("[data-viewer-panel]")];
