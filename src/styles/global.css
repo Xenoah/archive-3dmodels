@@ -19,14 +19,14 @@
 html[data-theme="dark"] {
   color-scheme: dark;
   --bg: #121513;
-  --surface: #f3f5f1;
-  --surface-soft: #dfe5dd;
-  --text: #111611;
-  --muted: #2d3830;
+  --surface: #1b201d;
+  --surface-soft: #252b27;
+  --text: #edf3ee;
+  --muted: #a8b4ab;
   --line: #374039;
   --accent: #35b8a9;
-  --accent-strong: #0c6159;
-  --accent-soft: #c8eee8;
+  --accent-strong: #79ddd3;
+  --accent-soft: #173f3b;
   --gold: #d9a84b;
   --shadow: 0 16px 38px rgba(0, 0, 0, 0.34);
 }
@@ -1057,13 +1057,14 @@ html[data-theme="dark"] .language-switch,
 html[data-theme="dark"] .latest-list a,
 html[data-theme="dark"] .latest-list span,
 html[data-theme="dark"] .empty {
-  background: rgba(243, 245, 241, 0.9);
+  background: rgba(27, 32, 29, 0.9);
+  color: var(--text);
 }
 
 html[data-theme="dark"] .toolbar input,
 html[data-theme="dark"] .toolbar select {
-  background: #ffffff;
-  color: #111611;
+  background: #151916;
+  color: var(--text);
 }
 
 .archive-panel {
