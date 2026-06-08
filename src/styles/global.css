@@ -10,6 +10,8 @@
   --accent-strong: #115e59;
   --accent-soft: #d6f1ec;
   --gold: #b7791f;
+  --on-light: #1f2420;
+  --on-light-muted: #667067;
   --shadow: 0 12px 32px rgba(22, 29, 25, 0.08);
   font-family:
     Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
@@ -28,6 +30,8 @@ html[data-theme="dark"] {
   --accent-strong: #79ddd3;
   --accent-soft: #173f3b;
   --gold: #d9a84b;
+  --on-light: #111611;
+  --on-light-muted: #4f5c54;
   --shadow: 0 16px 38px rgba(0, 0, 0, 0.34);
 }
 
@@ -730,7 +734,7 @@ html[data-viewer-enabled="false"] .viewer-off-fallback {
   border: 1px solid rgba(255, 255, 255, 0.55);
   border-radius: 6px;
   background: rgba(255, 255, 255, 0.78);
-  color: var(--text);
+  color: var(--on-light);
   min-height: 34px;
   padding: 0 10px;
   cursor: pointer;
@@ -784,8 +788,13 @@ html[data-viewer-enabled="false"] .viewer-off-fallback {
   border: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.82);
   border-radius: 8px;
+  color: var(--on-light);
   padding: 16px;
   margin: 18px 0;
+}
+
+.download-box .summary {
+  color: var(--on-light-muted);
 }
 
 .download-box dl,
@@ -796,7 +805,10 @@ html[data-viewer-enabled="false"] .viewer-off-fallback {
   margin: 14px 0 0;
 }
 
-.download-box dt,
+.download-box dt {
+  color: var(--on-light-muted);
+}
+
 .spec-list dt {
   color: var(--muted);
 }
@@ -830,7 +842,7 @@ html[data-viewer-enabled="false"] .viewer-off-fallback {
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.74)),
     var(--surface-soft);
-  color: var(--text);
+  color: var(--on-light);
   display: grid;
   gap: 18px;
   line-height: 1.75;
