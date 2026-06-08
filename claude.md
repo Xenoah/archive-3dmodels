@@ -101,7 +101,7 @@ STEP/STP は `occt-import-js` を使用する。`npm run generate` で `public/v
 
 追加ファイルはブラックリスト方式。`FORBIDDEN_EXTENSIONS` と `FORBIDDEN_FILENAMES` に該当しない `source/` 配下のファイルは生成データ、公開アセット、個別DLに反映される。
 
-`npm run capture:covers` で画像がないSTLモデルから `auto-cover.png` を自動生成できる。`auto-cover.png` は手動の cover/thumbnail/photos より優先度が低い。
+`npm run capture:covers` で画像がないSTLモデルから `auto-cover.png` を自動生成できる。既に `auto-cover.png` がある場合はスキップし、再生成したい場合は `npm run capture:covers -- --force` を使う。`auto-cover.png` は手動の cover/thumbnail/photos より優先度が低い。
 
 ### 日付管理
 

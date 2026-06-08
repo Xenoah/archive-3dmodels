@@ -6,6 +6,7 @@ import path from "node:path";
 import { CONTENT_MODELS_DIR } from "./lib/constants.mjs";
 
 const chrome = findChrome();
+const force = process.argv.includes("--force");
 if (!chrome) {
   console.warn("[WARN] cover capture skipped: Chrome or Edge was not found.");
   process.exit(0);
@@ -55,6 +56,7 @@ async function findCaptureTargets() {
     if (!entry.isDirectory()) continue;
     const modelDir = path.join(CONTENT_MODELS_DIR, entry.name);
     if (await hasManualImage(modelDir)) continue;
+    if (!force && existsSync(path.join(modelDir, "auto-cover.png"))) continue;
     const stl = await firstStl(path.join(modelDir, "source"));
     if (!stl) continue;
     targets.push({

@@ -309,5 +309,5 @@ Google tag / Google Analytics: Google の規約・ポリシーに従う
 
 - 追加ファイルはブラックリスト方式。`FORBIDDEN_EXTENSIONS` と `FORBIDDEN_FILENAMES` に該当しない `source/` 配下のファイルはソース一覧と個別DLに反映される。
 - 一覧ページは3DプレビューがデフォルトON。上部メニューの `3D ON/OFF` で切り替える。cover/thumbnail/photos がある場合は画像を優先し、画像がない場合は3Dプレビューを表示する。
-- `npm run capture:covers` で、画像がないSTLモデルから `auto-cover.png` を自動生成できる。後から cover/thumbnail/photos を追加した場合は手動画像が優先される。
+- `npm run capture:covers` で、画像がないSTLモデルから `auto-cover.png` を自動生成できる。既に `auto-cover.png` がある場合はスキップし、再生成したい場合は `npm run capture:covers -- --force` を使う。後から cover/thumbnail/photos を追加した場合は手動画像が優先される。
 - 詳細ページの3Dプレビューは `assets.viewers` にある対応ファイルだけを表示する。対応形式は FBX、STEP/STP、STL。
