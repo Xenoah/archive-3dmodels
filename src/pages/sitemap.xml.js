@@ -7,7 +7,7 @@ export function GET({ site }) {
     { loc: `${base}/`, lastmod: newestLastmod(publicModels) },
     { loc: `${base}/terms/` },
     ...publicModels.map((model) => ({
-      loc: `${base}/${model.slug}/`,
+      loc: `${base}/${encodeURIComponent(model.slug)}/`,
       lastmod: model.updatedAt || model.createdAt || ""
     }))
   ];

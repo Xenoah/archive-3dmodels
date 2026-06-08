@@ -81,7 +81,7 @@ https://xenoah.github.io/archive-3dmodels/sitemap.xml
 
 `src/components/ModelViewer.astro` を使う。
 
-一覧ページは3Dビューアを読み込まない。cover/thumbnail/photos 由来の画像があればサムネイル表示し、なければCSSフォールバックを表示する。
+一覧ページは3DプレビューがデフォルトON。上部メニューの `3D ON/OFF` で切り替える。cover/thumbnail/photos 由来の画像があればサムネイル表示を優先し、画像がなければ3Dプレビューを表示する。
 
 詳細ページでは `assets.viewers` にある対応ファイルだけをタブ表示する。複数ある場合、最初のビューアだけ自動起動し、非表示のビューアはタブ選択時に起動する。
 
@@ -101,6 +101,8 @@ STEP/STP は `occt-import-js` を使用する。`npm run generate` で `public/v
 
 追加ファイルはブラックリスト方式。`FORBIDDEN_EXTENSIONS` と `FORBIDDEN_FILENAMES` に該当しない `source/` 配下のファイルは生成データ、公開アセット、個別DLに反映される。
 
+`npm run capture:covers` で画像がないSTLモデルから `auto-cover.png` を自動生成できる。`auto-cover.png` は手動の cover/thumbnail/photos より優先度が低い。
+
 ### 日付管理
 
 表示用:
@@ -119,7 +121,7 @@ uploadedAt
 updatedAt
 ```
 
-`*At` は秒単位のISO日時。
+`*At` は `YYYY-MM-DD` の日付。秒単位の管理はしない。
 
 モデル移動後の作成日推定では、`content/models/{slug}/source/` だけでなく `_uploaded/{slug}/` の同名ファイルも見る。
 
@@ -214,7 +216,7 @@ credit_required: true
 
 説明文にCopilot向けプロンプトは入れない。本文は空欄から始める。
 
-`import:all-inbox -- --apply` 後は、処理済み `_inbox/{slug}` を `_uploaded/{slug}` へ移動する。
+`import:all-inbox -- --apply` 後も `_inbox/{slug}` は残す。push後に pull/sync で戻ってきた `_inbox/{slug}` は、`npm run sync:uploaded -- --apply` で作成日をMarkdownへ反映してからローカルの `_uploaded/{slug}` へ移動する。
 
 ## 検証
 

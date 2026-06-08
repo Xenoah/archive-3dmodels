@@ -2,7 +2,7 @@ import { existsSync } from "node:fs";
 import { mkdir, readdir, rename } from "node:fs/promises";
 import { spawnSync } from "node:child_process";
 import path from "node:path";
-import { CONTENT_MODELS_DIR, INBOX_DIR, SLUG_RE, STANDALONE_MODEL_EXTENSIONS, UPLOADED_DIR } from "./lib/constants.mjs";
+import { CONTENT_MODELS_DIR, INBOX_DIR, SLUG_RE, STANDALONE_MODEL_EXTENSIONS } from "./lib/constants.mjs";
 
 const apply = process.argv.includes("--apply");
 const merge = process.argv.includes("--merge");
@@ -32,7 +32,6 @@ if (slugs.length === 0) {
 }
 
 let failed = false;
-const archived = [];
 for (const slug of slugs) {
   console.log(`\n[INFO] ${apply ? "apply" : "dry-run"} import for _inbox/${slug}`);
   const args = ["scripts/import-inbox.mjs", slug];
@@ -47,24 +46,18 @@ for (const slug of slugs) {
     failed = true;
     continue;
   }
-
-  const inboxPath = path.join(INBOX_DIR, slug);
-  const uploadedPath = uniqueUploadedPath(slug);
   if (apply) {
-    await mkdir(UPLOADED_DIR, { recursive: true });
-    await rename(inboxPath, uploadedPath);
-    archived.push(uploadedPath);
-    console.log(`DO archive ${inboxPath} -> ${uploadedPath}`);
+    console.log(`[INFO] kept _inbox/${slug}. Run npm run sync:uploaded -- --apply after pull/sync to archive locally.`);
   } else {
-    console.log(`PLAN archive ${inboxPath} -> ${uploadedPath}`);
+    console.log(`PLAN keep _inbox/${slug}`);
   }
 }
 
-await writeSummary(slugs, looseResult, archived);
+await writeSummary(slugs, looseResult);
 
 if (failed) process.exit(1);
 
-async function writeSummary(slugs, looseResult, archived) {
+async function writeSummary(slugs, looseResult) {
   if (!process.env.GITHUB_STEP_SUMMARY) return;
   const mode = apply ? "apply" : "dry-run";
   const lines = [
@@ -76,9 +69,8 @@ async function writeSummary(slugs, looseResult, archived) {
     ...(looseResult.prepared.length
       ? ["", "Auto-foldered loose model file(s):", "", ...looseResult.prepared.map((item) => `- \`${item.from.replace(/\\/g, "/")}\` -> \`${item.to.replace(/\\/g, "/")}\``)]
       : []),
-    ...(archived.length
-      ? ["", "Archived:", "", ...archived.map((dir) => `- \`${dir.replace(/\\/g, "/")}\``)]
-      : [])
+    "",
+    "Inbox folders are kept. Archive locally with `npm run sync:uploaded -- --apply` after pull/sync."
   ];
   await import("node:fs/promises").then(({ writeFile }) =>
     writeFile(process.env.GITHUB_STEP_SUMMARY, `${lines.join("\n")}\n`, { flag: "a" })
@@ -130,7 +122,8 @@ function slugFromFileName(fileName) {
   const base = path.parse(fileName).name;
   const slug = base
     .trim()
-    .replace(/[^A-Za-z0-9_-]+/g, "-")
+    .replace(/[<>:"/\\|?*\x00-\x1F]+/gu, "-")
+    .replace(/\s+/g, "-")
     .replace(/[-_]{2,}/g, "-")
     .replace(/^[-_]+|[-_]+$/g, "");
   return SLUG_RE.test(slug) ? slug : "model";
@@ -145,16 +138,6 @@ function uniqueInboxSlug(baseSlug, reserved) {
     existsSync(path.join(CONTENT_MODELS_DIR, candidate))
   ) {
     candidate = `${baseSlug}-${index}`;
-    index += 1;
-  }
-  return candidate;
-}
-
-function uniqueUploadedPath(slug) {
-  let candidate = path.join(UPLOADED_DIR, slug);
-  let index = 2;
-  while (existsSync(candidate)) {
-    candidate = path.join(UPLOADED_DIR, `${slug}-${index}`);
     index += 1;
   }
   return candidate;

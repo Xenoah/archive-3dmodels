@@ -111,11 +111,11 @@ summary: ""
 version: "0.1.0"
 author: "Xenoah"
 created: "2026年06月"
-createdAt: "2026-06-07T10:00:00Z"
+createdAt: "2026-06-07"
 uploaded: "2026年06月"
-uploadedAt: "2026-06-07T10:00:00Z"
+uploadedAt: "2026-06-07"
 updated: "2026年06月"
-updatedAt: "2026-06-07T10:00:00Z"
+updatedAt: "2026-06-07"
 scale: ""
 commercial_use: false
 redistribution: false
@@ -125,9 +125,11 @@ aliases: []
 ```
 
 `created` / `uploaded` / `updated` は表示用の年月です。
-`createdAt` / `uploadedAt` / `updatedAt` は内部管理用の秒単位日時です。
+`createdAt` / `uploadedAt` / `updatedAt` は内部管理用の日付です。秒単位の管理はしません。
 
 `created` が未指定の場合、生成処理は主な3Dモデルファイルから日時を推定します。移動後の `source/` だけでなく、同名の `_uploaded/{slug}/` があればそちらも参照します。ただし Git に push された後のファイル作成日時は元のOS作成日時を保持しないため、正確に残したい場合は Front Matter に明示してください。
+
+`summary` は本文説明の冒頭から自動生成されます。カード上では長くなりすぎないように末尾をフェードアウトします。
 
 未知の Front Matter キーはエラーにせず、生成JSONの `extra` に保持します。
 
@@ -209,7 +211,7 @@ npm run import:inbox {slug} -- --merge
 npm run import:inbox {slug} -- --merge --apply
 ```
 
-取り込み後、`import:all-inbox -- --apply` は処理済みフォルダを `_uploaded/{slug}` へ移動します。
+`import:all-inbox -- --apply` は `_inbox/{slug}` を削除・移動しません。push後に pull/sync で戻ってきた `_inbox/{slug}` は、`npm run sync:uploaded -- --apply` で作成日をMarkdownへ反映してからローカルの `_uploaded/{slug}` へ移動します。
 
 `_inbox` 直下に単体3Dファイルを置いた場合は、自動でフォルダ化してから取り込みます。対象は `.fbx`、`.step`、`.stp`、`.stl`、`.3mf`、`.obj`、`.glb` です。画像や説明文など、単体3Dファイルではない直下ファイルはエラーです。
 
@@ -306,5 +308,6 @@ Google tag / Google Analytics: Google の規約・ポリシーに従う
 ## 現在の追加仕様メモ
 
 - 追加ファイルはブラックリスト方式。`FORBIDDEN_EXTENSIONS` と `FORBIDDEN_FILENAMES` に該当しない `source/` 配下のファイルはソース一覧と個別DLに反映される。
-- 一覧ページは3Dビューアを読み込まない。サムネイル画像がない場合はCSSフォールバック表示にする。
+- 一覧ページは3DプレビューがデフォルトON。上部メニューの `3D ON/OFF` で切り替える。cover/thumbnail/photos がある場合は画像を優先し、画像がない場合は3Dプレビューを表示する。
+- `npm run capture:covers` で、画像がないSTLモデルから `auto-cover.png` を自動生成できる。後から cover/thumbnail/photos を追加した場合は手動画像が優先される。
 - 詳細ページの3Dプレビューは `assets.viewers` にある対応ファイルだけを表示する。対応形式は FBX、STEP/STP、STL。

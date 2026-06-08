@@ -7,6 +7,8 @@
     "new:model": "node scripts/new-model.mjs",
     "import:inbox": "node scripts/import-inbox.mjs",
     "import:all-inbox": "node scripts/import-all-inbox.mjs",
+    "sync:uploaded": "node scripts/sync-uploaded.mjs",
+    "capture:covers": "node scripts/capture-missing-covers.mjs",
     "import:loose": "node scripts/import-loose.mjs",
     "normalize:model": "node scripts/normalize-model.mjs",
     "optimize:images": "node scripts/optimize-images.mjs",

@@ -34,7 +34,7 @@ export function currentYearMonth() {
 }
 
 export function currentDateTime() {
-  return formatDateTimeSecond(new Date());
+  return formatDate(new Date());
 }
 
 export function yearMonthValue(value, fallback) {
@@ -49,10 +49,10 @@ export function yearMonthValue(value, fallback) {
 
 export function dateTimeValue(value, fallback = "") {
   const parsed = parseDateLike(value);
-  if (parsed) return formatDateTimeSecond(parsed);
+  if (parsed) return formatDate(parsed);
 
   const fallbackParsed = parseDateLike(fallback);
-  return fallbackParsed ? formatDateTimeSecond(fallbackParsed) : "";
+  return fallbackParsed ? formatDate(fallbackParsed) : "";
 }
 
 export function formatYearMonth(date) {
@@ -63,6 +63,10 @@ export function formatYearMonth(date) {
 
 export function formatDateTimeSecond(date) {
   return date.toISOString().replace(/\.\d{3}Z$/, "Z");
+}
+
+export function formatDate(date) {
+  return date.toISOString().slice(0, 10);
 }
 
 async function modelMetadataDate(file) {

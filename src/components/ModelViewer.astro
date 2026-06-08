@@ -400,6 +400,7 @@ const isThumbnail = variant === "thumbnail";
 
   function startModelViewer(root) {
     if (!root || initialized.has(root)) return;
+    if (root.dataset.viewerVariant === "thumbnail" && document.documentElement.dataset.viewerEnabled === "false") return;
     initialized.add(root);
     new ArchiveModelViewer(root).start().catch((error) => {
       root.dataset.viewerStatus = "failed";
@@ -411,6 +412,9 @@ const isThumbnail = variant === "thumbnail";
 
   window.archiveModelViewerStart = startModelViewer;
   window.addEventListener("archive-model-viewer-activate", (event) => startModelViewer(event.detail?.root));
+  window.addEventListener("archive-viewer-preference-change", (event) => {
+    if (event.detail?.enabled) initModelViewers();
+  });
   initModelViewers();
   window.addEventListener("archive-language-change", () => {
     document.querySelectorAll(".model-viewer-3d").forEach(updateViewerStatus);

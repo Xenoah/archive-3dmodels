@@ -8,7 +8,7 @@ export function GET({ site }) {
 
   const body = `<?xml version="1.0" encoding="UTF-8"?>\n<rss version="2.0">\n  <channel>\n    <title>3D Models</title>\n    <link>${escapeXml(`${base}/`)}</link>\n    <description>Downloadable 3D model archive</description>\n${publicModels
       .map((model) => {
-        const link = `${base}/${model.slug}/`;
+        const link = `${base}/${encodeURIComponent(model.slug)}/`;
         return `    <item>\n      <title>${escapeXml(model.title)}</title>\n      <link>${escapeXml(link)}</link>\n      <guid>${escapeXml(link)}</guid>\n      <description>${escapeXml(model.summary || model.title)}</description>\n    </item>`;
       })
       .join("\n")}\n  </channel>\n</rss>\n`;

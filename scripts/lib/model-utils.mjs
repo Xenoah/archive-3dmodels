@@ -47,6 +47,10 @@ export function titleFromSlug(slug) {
     .join(" ");
 }
 
+export function encodePathSegment(value) {
+  return encodeURIComponent(value).replace(/%2F/gi, "/");
+}
+
 export function formatBool(value) {
   if (value === true) return "可";
   if (value === false) return "不可";
@@ -279,6 +283,8 @@ export async function collectModels(report, options = {}) {
     const sources = await findSources(dir);
     const download = await findDownload(slug);
     const sourceCreatedAt = await sourceCreatedDateTime(sources);
+    const bodyText = body.replace(/\s+/g, " ").trim();
+    const summary = summaryFromBody(bodyText) || data.summary || "";
     const createdAt = dateTimeValue(data.createdAt, "") || dateTimeValue(data.created, "") || sourceCreatedAt;
     const uploadedAt = dateTimeValue(data.uploadedAt, "");
     const updatedAt = dateTimeValue(data.updatedAt, "") || dateTimeValue(data.updated, "") || createdAt;
@@ -299,7 +305,7 @@ export async function collectModels(report, options = {}) {
       models.push({
         slug,
         title: data.title || titleFromSlug(slug),
-        summary: data.summary || "",
+        summary,
         category: data.category || "other",
         tags,
         license: data.license || "Original",
@@ -318,7 +324,7 @@ export async function collectModels(report, options = {}) {
         modification: data.modification,
         credit_required: data.credit_required,
         bodyHtml: renderMarkdown(body),
-        bodyText: body.replace(/\s+/g, " ").trim(),
+        bodyText,
         aliases: Array.isArray(data.aliases) ? data.aliases : [],
         assets: makeAssets(slug, { cover, preview, photos, sources, download }),
         sourceCount: sources.length,
@@ -358,7 +364,9 @@ async function findCover(dir) {
     if (existsSync(fullPath)) return fullPath;
   }
   const photos = await findPhotos(dir);
-  return photos[0] ?? null;
+  if (photos[0]) return photos[0];
+  const autoCover = path.join(dir, "auto-cover.png");
+  return existsSync(autoCover) ? autoCover : null;
 }
 
 async function findPreview(dir) {
@@ -409,8 +417,9 @@ async function findDownload(slug) {
 
 function makeAssets(slug, assets) {
   const base = siteBase();
-  const url = (file) => (file ? `${base}/${slug}/${path.basename(file)}` : null);
-  const sourceUrl = (file) => `${base}/${slug}/source/${path.basename(file)}`;
+  const assetUrl = (...segments) => `${base}/${segments.map(encodePathSegment).join("/")}`;
+  const url = (file) => (file ? assetUrl(slug, path.basename(file)) : null);
+  const sourceUrl = (file) => assetUrl(slug, "source", path.basename(file));
   const sourceAssets = assets.sources.map((source) => ({
     name: path.basename(source),
     ext: path.extname(source).toLowerCase(),
@@ -422,12 +431,12 @@ function makeAssets(slug, assets) {
   return {
     cover: url(assets.cover),
     preview: url(assets.preview),
-    photos: assets.photos.map((photo) => `${base}/${slug}/photos/${path.basename(photo)}`),
+    photos: assets.photos.map((photo) => assetUrl(slug, "photos", path.basename(photo))),
     sources: sourceAssets,
     stlPreview: sourceAssets.find((source) => source.ext === ".stl")?.url ?? null,
     viewer,
     viewers,
-    download: assets.download ? `${base}/${slug}/downloads/${path.basename(assets.download)}` : null
+    download: assets.download ? assetUrl(slug, "downloads", path.basename(assets.download)) : null
   };
 }
 
@@ -453,11 +462,20 @@ function viewerTypeForExt(ext) {
 
 function sourceDownloadName(slug, source) {
   const parsed = path.parse(source);
-  const partName = parsed.name
-    .replace(/[^A-Za-z0-9_-]+/g, "-")
-    .replace(/-+/g, "-")
-    .replace(/^-|-$/g, "") || "part";
+  const partName = parsed.name.replace(/[<>:"/\\|?*\x00-\x1F]+/gu, "-").trim() || "part";
   return `${slug}_${partName}${parsed.ext.toLowerCase()}`;
+}
+
+function summaryFromBody(bodyText) {
+  return bodyText
+    .replace(/^#+\s+/gm, "")
+    .replace(/!\[[^\]]*]\([^)]+\)/g, "")
+    .replace(/\[[^\]]+]\([^)]+\)/g, (match) => match.replace(/^\[|\]\([^)]+\)$/g, ""))
+    .replace(/[`*_>#-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 180)
+    .trim();
 }
 
 async function resetGeneratedPublic() {

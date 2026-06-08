@@ -66,7 +66,7 @@ export const PERSONAL_INFO_PATTERNS = [
 
 export const MAX_FILE_BYTES = 100 * 1024 * 1024;
 export const WARN_FILE_BYTES = 50 * 1024 * 1024;
-export const SLUG_RE = /^[A-Za-z0-9_-]+$/;
+export const SLUG_RE = /^[^<>:"/\\|?*\x00-\x1F]+$/u;
 
 export const KNOWN_FRONTMATTER_KEYS = new Set([
   "title",
