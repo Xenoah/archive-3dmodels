@@ -1,6 +1,7 @@
 ---
-const { source, title = "3D preview" } = Astro.props;
+const { source, title = "3D preview", variant = "detail", autoload = true } = Astro.props;
 const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+const isThumbnail = variant === "thumbnail";
 ---
 
 <div
@@ -9,28 +10,36 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, "");
   data-model-type={source.type}
   data-model-name={source.name}
   data-occt-base={`${base}/vendor/occt-import-js`}
+  data-viewer-variant={variant}
+  data-viewer-autoload={autoload ? "true" : "false"}
 >
   <canvas aria-label={title}></canvas>
-  <div class="model-viewer-ui">
-    <span class="model-viewer-status">Loading {source.type.toUpperCase()}</span>
-    <div class="model-viewer-controls" aria-label="3D preview controls">
-      <button type="button" data-action="reset">Reset</button>
-      <button type="button" data-action="spin">Spin</button>
-      <button type="button" data-action="wire">Wire</button>
-      <select data-setting="material" aria-label="Material style">
-        <option value="original">Original</option>
-        <option value="clay">Clay</option>
-        <option value="metal">Metal</option>
-        <option value="plastic">Plastic</option>
-      </select>
-      <select data-setting="lighting" aria-label="Lighting style">
-        <option value="studio">Studio</option>
-        <option value="soft">Soft</option>
-        <option value="front">Front</option>
-        <option value="high">High</option>
-      </select>
-    </div>
-  </div>
+  {
+    isThumbnail ? (
+      <span class="model-viewer-status compact">Loading {source.type.toUpperCase()}</span>
+    ) : (
+      <div class="model-viewer-ui">
+        <span class="model-viewer-status">Loading {source.type.toUpperCase()}</span>
+        <div class="model-viewer-controls" aria-label="3D preview controls">
+          <button type="button" data-action="reset">Reset</button>
+          <button type="button" data-action="spin">Spin</button>
+          <button type="button" data-action="wire">Wire</button>
+          <select data-setting="material" aria-label="Material style">
+            <option value="original">Original</option>
+            <option value="clay">Clay</option>
+            <option value="metal">Metal</option>
+            <option value="plastic">Plastic</option>
+          </select>
+          <select data-setting="lighting" aria-label="Lighting style">
+            <option value="studio">Studio</option>
+            <option value="soft">Soft</option>
+            <option value="front">Front</option>
+            <option value="high">High</option>
+          </select>
+        </div>
+      </div>
+    )
+  }
 </div>
 
 <script>
@@ -50,7 +59,8 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, "");
       this.src = root.dataset.modelSrc;
       this.type = root.dataset.modelType;
       this.occtBase = root.dataset.occtBase;
-      this.spin = true;
+      this.isThumbnail = root.dataset.viewerVariant === "thumbnail";
+      this.spin = !this.isThumbnail;
       this.wireframe = false;
       this.materialMode = "original";
       this.lightingMode = "studio";
@@ -85,6 +95,7 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, "");
       this.controls = new OrbitControls(this.camera, this.canvas);
       this.controls.enableDamping = true;
       this.controls.dampingFactor = 0.08;
+      this.controls.enabled = !this.isThumbnail;
       this.controls.enableZoom = false;
       this.controls.autoRotate = this.spin;
       this.controls.autoRotateSpeed = 1.3;
@@ -97,20 +108,20 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, "");
     }
 
     installEvents() {
-      this.root.querySelector('[data-action="reset"]').addEventListener("click", () => this.fitCamera(this.model));
-      this.root.querySelector('[data-action="spin"]').addEventListener("click", () => {
+      this.root.querySelector('[data-action="reset"]')?.addEventListener("click", () => this.fitCamera(this.model));
+      this.root.querySelector('[data-action="spin"]')?.addEventListener("click", () => {
         this.spin = !this.spin;
         this.controls.autoRotate = this.spin;
       });
-      this.root.querySelector('[data-action="wire"]').addEventListener("click", () => {
+      this.root.querySelector('[data-action="wire"]')?.addEventListener("click", () => {
         this.wireframe = !this.wireframe;
         this.applyWireframe();
       });
-      this.root.querySelector('[data-setting="material"]').addEventListener("change", (event) => {
+      this.root.querySelector('[data-setting="material"]')?.addEventListener("change", (event) => {
         this.materialMode = event.target.value;
         this.applyMaterial();
       });
-      this.root.querySelector('[data-setting="lighting"]').addEventListener("change", (event) => {
+      this.root.querySelector('[data-setting="lighting"]')?.addEventListener("change", (event) => {
         this.lightingMode = event.target.value;
         this.applyLighting();
       });
@@ -235,7 +246,7 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, "");
       const size = box.getSize(new THREE.Vector3());
       object.position.sub(center);
       const radius = Math.max(size.x, size.y, size.z, 1);
-      const distance = radius * 1.8;
+      const distance = radius * (this.isThumbnail ? 5.2 : 1.8);
       this.camera.near = Math.max(distance / 1000, 0.01);
       this.camera.far = distance * 1000;
       this.camera.position.set(distance * 0.9, distance * 0.68, distance * 0.92);
@@ -303,15 +314,26 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, "");
   }
 
   function initModelViewers() {
-    document.querySelectorAll(".model-viewer-3d").forEach((root) => {
-      if (initialized.has(root)) return;
-      initialized.add(root);
-      new ArchiveModelViewer(root).start().catch((error) => {
-        root.querySelector(".model-viewer-status").textContent = "Preview failed";
-        console.error(error);
-      });
+    document.querySelectorAll('.model-viewer-3d[data-viewer-autoload="true"]').forEach(startModelViewer);
+  }
+
+  function startModelViewer(root) {
+    if (!root || initialized.has(root)) return;
+    if (root.dataset.viewerVariant === "thumbnail" && document.documentElement.dataset.viewerEnabled === "false") return;
+    initialized.add(root);
+    new ArchiveModelViewer(root).start().then(() => {
+      root.dataset.loaded = "true";
+    }).catch((error) => {
+      root.dataset.loaded = "true";
+      root.querySelector(".model-viewer-status").textContent = "Preview failed";
+      console.error(error);
     });
   }
 
+  window.archiveModelViewerStart = startModelViewer;
+  window.addEventListener("archive-model-viewer-activate", (event) => startModelViewer(event.detail?.root));
+  window.addEventListener("archive-viewer-preference-change", (event) => {
+    if (event.detail?.enabled) initModelViewers();
+  });
   initModelViewers();
 </script>
