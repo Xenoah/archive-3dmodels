@@ -85,6 +85,7 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, "");
       this.controls = new OrbitControls(this.camera, this.canvas);
       this.controls.enableDamping = true;
       this.controls.dampingFactor = 0.08;
+      this.controls.enableZoom = false;
       this.controls.autoRotate = this.spin;
       this.controls.autoRotateSpeed = 1.3;
 
