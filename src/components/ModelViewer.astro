@@ -1,7 +1,6 @@
 ---
-const { source, title = "3Dプレビュー", variant = "detail", autoload = true } = Astro.props;
+const { source, title = "3D preview" } = Astro.props;
 const base = import.meta.env.BASE_URL.replace(/\/$/, "");
-const isThumbnail = variant === "thumbnail";
 ---
 
 <div
@@ -10,113 +9,38 @@ const isThumbnail = variant === "thumbnail";
   data-model-type={source.type}
   data-model-name={source.name}
   data-occt-base={`${base}/vendor/occt-import-js`}
-  data-viewer-variant={variant}
-  data-viewer-status="loading"
-  data-viewer-autoload={autoload ? "true" : "false"}
 >
   <canvas aria-label={title}></canvas>
-  <div class="model-viewer-loading" aria-hidden="true"></div>
-  <div class="model-viewer-axis" aria-hidden="true">
-    <span class="axis-line axis-x">X</span>
-    <span class="axis-line axis-y">Y</span>
-    <span class="axis-line axis-z">Z</span>
+  <div class="model-viewer-ui">
+    <span class="model-viewer-status">Loading {source.type.toUpperCase()}</span>
+    <div class="model-viewer-controls" aria-label="3D preview controls">
+      <button type="button" data-action="reset">Reset</button>
+      <button type="button" data-action="spin">Spin</button>
+      <button type="button" data-action="wire">Wire</button>
+      <select data-setting="material" aria-label="Material style">
+        <option value="original">Original</option>
+        <option value="clay">Clay</option>
+        <option value="metal">Metal</option>
+        <option value="plastic">Plastic</option>
+      </select>
+      <select data-setting="lighting" aria-label="Lighting style">
+        <option value="studio">Studio</option>
+        <option value="soft">Soft</option>
+        <option value="front">Front</option>
+        <option value="high">High</option>
+      </select>
+    </div>
   </div>
-  {
-    isThumbnail ? (
-      <span
-        class="model-viewer-status compact"
-        data-lang-ja={`${source.type.toUpperCase()} を読み込み中`}
-        data-lang-en={`Loading ${source.type.toUpperCase()}`}
-      >
-        {source.type.toUpperCase()} を読み込み中
-      </span>
-    ) : (
-      <>
-      <div class="model-viewer-links" aria-label="Preview fallback links">
-        <a href={source.url} data-lang-ja="ファイルを開く" data-lang-en="Open file">ファイルを開く</a>
-        <a href={source.url} download={source.downloadName || source.name} data-lang-ja="単体DL" data-lang-en="Download">単体DL</a>
-      </div>
-      <div class="model-viewer-ui">
-        <span
-          class="model-viewer-status"
-          data-lang-ja={`${source.type.toUpperCase()} を読み込み中`}
-          data-lang-en={`Loading ${source.type.toUpperCase()}`}
-        >
-          {source.type.toUpperCase()} を読み込み中
-        </span>
-        <div
-          class="model-viewer-controls"
-          aria-label="3Dプレビュー操作"
-          data-lang-aria-label-ja="3Dプレビュー操作"
-          data-lang-aria-label-en="3D preview controls"
-        >
-          <button type="button" data-action="reset" data-lang-ja="リセット" data-lang-en="Reset">リセット</button>
-          <button type="button" data-action="spin" data-lang-ja="回転" data-lang-en="Spin">回転</button>
-          <button type="button" data-action="wire" data-lang-ja="ワイヤー" data-lang-en="Wire">ワイヤー</button>
-          <select
-            data-setting="material"
-            aria-label="マテリアル"
-            data-lang-aria-label-ja="マテリアル"
-            data-lang-aria-label-en="Material style"
-          >
-            <option value="original" data-lang-ja="オリジナル" data-lang-en="Original">オリジナル</option>
-            <option value="clay" data-lang-ja="クレイ" data-lang-en="Clay">クレイ</option>
-            <option value="metal" data-lang-ja="金属" data-lang-en="Metal">金属</option>
-            <option value="plastic" data-lang-ja="プラスチック" data-lang-en="Plastic">プラスチック</option>
-          </select>
-          <select
-            data-setting="lighting"
-            aria-label="ライティング"
-            data-lang-aria-label-ja="ライティング"
-            data-lang-aria-label-en="Lighting style"
-          >
-            <option value="studio" data-lang-ja="スタジオ" data-lang-en="Studio">スタジオ</option>
-            <option value="soft" data-lang-ja="ソフト" data-lang-en="Soft">ソフト</option>
-            <option value="front" data-lang-ja="正面" data-lang-en="Front">正面</option>
-            <option value="high" data-lang-ja="ハイ" data-lang-en="High">ハイ</option>
-          </select>
-        </div>
-      </div>
-      </>
-    )
-  }
 </div>
 
 <script>
+  import * as THREE from "three";
+  import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+  import { FBXLoader } from "three/examples/jsm/loaders/FBXLoader.js";
+  import { STLLoader } from "three/examples/jsm/loaders/STLLoader.js";
+
   const initialized = new WeakSet();
   let occtPromise = null;
-  let threePromise = null;
-  let THREE;
-  let OrbitControls;
-  let FBXLoader;
-  let STLLoader;
-
-  function currentLanguage() {
-    return window.archiveLanguage?.get?.() === "en" ? "en" : "ja";
-  }
-
-  function modelViewerText(status, type) {
-    const upperType = (type || "3D").toUpperCase();
-    const labels = {
-      ja: {
-        loading: `${upperType} を読み込み中`,
-        preview: `${upperType} プレビュー`,
-        failed: "プレビューに失敗しました"
-      },
-      en: {
-        loading: `Loading ${upperType}`,
-        preview: `${upperType} preview`,
-        failed: "Preview failed"
-      }
-    };
-    return labels[currentLanguage()][status] ?? labels[currentLanguage()].preview;
-  }
-
-  function updateViewerStatus(root) {
-    const status = root.querySelector(".model-viewer-status");
-    if (!status) return;
-    status.textContent = modelViewerText(root.dataset.viewerStatus, root.dataset.modelType);
-  }
 
   class ArchiveModelViewer {
     constructor(root) {
@@ -126,18 +50,14 @@ const isThumbnail = variant === "thumbnail";
       this.src = root.dataset.modelSrc;
       this.type = root.dataset.modelType;
       this.occtBase = root.dataset.occtBase;
-      this.variant = root.dataset.viewerVariant;
-      this.isThumbnail = this.variant === "thumbnail";
-      this.spin = !this.isThumbnail;
+      this.spin = true;
       this.wireframe = false;
       this.materialMode = "original";
       this.lightingMode = "studio";
       this.meshes = [];
-      window.addEventListener("archive-language-change", () => updateViewerStatus(this.root));
     }
 
     async start() {
-      await loadThreeModules();
       this.createScene();
       this.installEvents();
       const object = await this.loadObject();
@@ -147,18 +67,14 @@ const isThumbnail = variant === "thumbnail";
       this.applyMaterial();
       this.applyLighting();
       this.fitCamera(object);
-      this.setStatus("preview");
-      this.root.dataset.loaded = "true";
-      this.root.classList.add("is-loaded");
+      this.status.textContent = `${this.type.toUpperCase()} preview`;
       this.renderer.setAnimationLoop(() => this.draw());
     }
 
     createScene() {
       this.scene = new THREE.Scene();
-      this.scene.up.set(0, 0, 1);
       this.scene.background = null;
       this.camera = new THREE.PerspectiveCamera(42, 1, 0.01, 100000);
-      this.camera.up.set(0, 0, 1);
       this.camera.position.set(3.2, 2.5, 3.4);
 
       this.renderer = new THREE.WebGLRenderer({ canvas: this.canvas, antialias: true, alpha: true });
@@ -169,10 +85,8 @@ const isThumbnail = variant === "thumbnail";
       this.controls = new OrbitControls(this.camera, this.canvas);
       this.controls.enableDamping = true;
       this.controls.dampingFactor = 0.08;
-      this.controls.enabled = !this.isThumbnail;
       this.controls.autoRotate = this.spin;
       this.controls.autoRotateSpeed = 1.3;
-      this.controls.screenSpacePanning = false;
 
       this.ambientLight = new THREE.AmbientLight(0xffffff, 0.45);
       this.hemiLight = new THREE.HemisphereLight(0xffffff, 0x66706c, 1.0);
@@ -182,20 +96,20 @@ const isThumbnail = variant === "thumbnail";
     }
 
     installEvents() {
-      this.root.querySelector('[data-action="reset"]')?.addEventListener("click", () => this.fitCamera(this.model));
-      this.root.querySelector('[data-action="spin"]')?.addEventListener("click", () => {
+      this.root.querySelector('[data-action="reset"]').addEventListener("click", () => this.fitCamera(this.model));
+      this.root.querySelector('[data-action="spin"]').addEventListener("click", () => {
         this.spin = !this.spin;
         this.controls.autoRotate = this.spin;
       });
-      this.root.querySelector('[data-action="wire"]')?.addEventListener("click", () => {
+      this.root.querySelector('[data-action="wire"]').addEventListener("click", () => {
         this.wireframe = !this.wireframe;
         this.applyWireframe();
       });
-      this.root.querySelector('[data-setting="material"]')?.addEventListener("change", (event) => {
+      this.root.querySelector('[data-setting="material"]').addEventListener("change", (event) => {
         this.materialMode = event.target.value;
         this.applyMaterial();
       });
-      this.root.querySelector('[data-setting="lighting"]')?.addEventListener("change", (event) => {
+      this.root.querySelector('[data-setting="lighting"]').addEventListener("change", (event) => {
         this.lightingMode = event.target.value;
         this.applyLighting();
       });
@@ -209,7 +123,7 @@ const isThumbnail = variant === "thumbnail";
     }
 
     loadFbx() {
-      this.setStatus("loading");
+      this.status.textContent = "Loading FBX";
       const loader = new FBXLoader();
       const resourcePath = this.src.slice(0, this.src.lastIndexOf("/") + 1);
       loader.setResourcePath(resourcePath);
@@ -219,7 +133,7 @@ const isThumbnail = variant === "thumbnail";
     }
 
     loadStl() {
-      this.setStatus("loading");
+      this.status.textContent = "Loading STL";
       const loader = new STLLoader();
       return new Promise((resolve, reject) => {
         loader.load(
@@ -240,18 +154,18 @@ const isThumbnail = variant === "thumbnail";
     }
 
     async loadStep() {
-      this.setStatus("loading");
+      this.status.textContent = "Loading STEP";
       const occt = await loadOcct(this.occtBase);
       const response = await fetch(this.src);
       if (!response.ok) throw new Error(`Failed to fetch STEP: ${response.status}`);
       const buffer = new Uint8Array(await response.arrayBuffer());
-      const result = await occt.ReadStepFile(buffer, {
+      const result = occt.ReadStepFile(buffer, {
         linearUnit: "millimeter",
         linearDeflectionType: "bounding_box_ratio",
         linearDeflection: 0.0008,
         angularDeflection: 0.35
       });
-      if (result?.success === false || !Array.isArray(result?.meshes)) throw new Error("STEP import failed");
+      if (!result.success) throw new Error("STEP import failed");
       const group = new THREE.Group();
       for (const mesh of result.meshes ?? []) group.add(buildStepMesh(mesh));
       return group;
@@ -320,11 +234,10 @@ const isThumbnail = variant === "thumbnail";
       const size = box.getSize(new THREE.Vector3());
       object.position.sub(center);
       const radius = Math.max(size.x, size.y, size.z, 1);
-      const distance = radius * (this.isThumbnail ? 5.2 : 3.1);
+      const distance = radius * 1.8;
       this.camera.near = Math.max(distance / 1000, 0.01);
       this.camera.far = distance * 1000;
-      this.camera.up.set(0, 0, 1);
-      this.camera.position.set(distance * 0.9, distance * -1.05, distance * 0.72);
+      this.camera.position.set(distance * 0.9, distance * 0.68, distance * 0.92);
       this.camera.updateProjectionMatrix();
       this.controls.target.set(0, 0, 0);
       this.controls.update();
@@ -342,11 +255,6 @@ const isThumbnail = variant === "thumbnail";
       }
       this.controls.update();
       this.renderer.render(this.scene, this.camera);
-    }
-
-    setStatus(status) {
-      this.root.dataset.viewerStatus = status;
-      updateViewerStatus(this.root);
     }
   }
 
@@ -382,23 +290,6 @@ const isThumbnail = variant === "thumbnail";
     return occtPromise;
   }
 
-  async function loadThreeModules() {
-    if (!threePromise) {
-      threePromise = Promise.all([
-        import("three"),
-        import("three/examples/jsm/controls/OrbitControls.js"),
-        import("three/examples/jsm/loaders/FBXLoader.js"),
-        import("three/examples/jsm/loaders/STLLoader.js")
-      ]).then(([three, orbit, fbx, stl]) => {
-        THREE = three;
-        OrbitControls = orbit.OrbitControls;
-        FBXLoader = fbx.FBXLoader;
-        STLLoader = stl.STLLoader;
-      });
-    }
-    return threePromise;
-  }
-
   function loadScript(src) {
     if (document.querySelector(`script[src="${src}"]`)) return Promise.resolve();
     return new Promise((resolve, reject) => {
@@ -411,29 +302,15 @@ const isThumbnail = variant === "thumbnail";
   }
 
   function initModelViewers() {
-    document.querySelectorAll('.model-viewer-3d[data-viewer-autoload="true"]').forEach(startModelViewer);
-  }
-
-  function startModelViewer(root) {
-    if (!root || initialized.has(root)) return;
-    if (root.dataset.viewerVariant === "thumbnail" && document.documentElement.dataset.viewerEnabled === "false") return;
-    initialized.add(root);
-    new ArchiveModelViewer(root).start().catch((error) => {
-      root.dataset.viewerStatus = "failed";
-      root.dataset.loaded = "true";
-      updateViewerStatus(root);
-      root.classList.add("is-loaded");
-      console.error(error);
+    document.querySelectorAll(".model-viewer-3d").forEach((root) => {
+      if (initialized.has(root)) return;
+      initialized.add(root);
+      new ArchiveModelViewer(root).start().catch((error) => {
+        root.querySelector(".model-viewer-status").textContent = "Preview failed";
+        console.error(error);
+      });
     });
   }
 
-  window.archiveModelViewerStart = startModelViewer;
-  window.addEventListener("archive-model-viewer-activate", (event) => startModelViewer(event.detail?.root));
-  window.addEventListener("archive-viewer-preference-change", (event) => {
-    if (event.detail?.enabled) initModelViewers();
-  });
   initModelViewers();
-  window.addEventListener("archive-language-change", () => {
-    document.querySelectorAll(".model-viewer-3d").forEach(updateViewerStatus);
-  });
 </script>
