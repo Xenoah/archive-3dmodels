@@ -127,22 +127,6 @@ const isThumbnail = variant === "thumbnail";
         this.lightingMode = event.target.value;
         this.applyLighting();
       });
-
-      // Prevent wheel/scroll zoom on the canvas
-      this.canvas.addEventListener('wheel', (event) => {
-        event.preventDefault();
-        event.stopPropagation();
-      }, { passive: false });
-
-      // Additional safeguard: prevent pointer wheel events
-      this.canvas.addEventListener('pointerwheel', (event) => {
-        event.preventDefault();
-      }, { passive: false });
-
-      // Prevent mousewheel events (older browsers)
-      this.canvas.addEventListener('mousewheel', (event) => {
-        event.preventDefault();
-      }, { passive: false });
     }
 
     async loadObject() {
