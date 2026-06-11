@@ -97,6 +97,8 @@ const isThumbnail = variant === "thumbnail";
       this.controls.dampingFactor = 0.08;
       this.controls.enabled = !this.isThumbnail;
       this.controls.enableZoom = false;
+      this.controls.enableRotate = !this.isThumbnail;
+      this.controls.enablePan = !this.isThumbnail;
       this.controls.autoRotate = this.spin;
       this.controls.autoRotateSpeed = 1.3;
 
@@ -125,6 +127,22 @@ const isThumbnail = variant === "thumbnail";
         this.lightingMode = event.target.value;
         this.applyLighting();
       });
+
+      // Prevent wheel/scroll zoom on the canvas
+      this.canvas.addEventListener('wheel', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+      }, { passive: false });
+
+      // Additional safeguard: prevent pointer wheel events
+      this.canvas.addEventListener('pointerwheel', (event) => {
+        event.preventDefault();
+      }, { passive: false });
+
+      // Prevent mousewheel events (older browsers)
+      this.canvas.addEventListener('mousewheel', (event) => {
+        event.preventDefault();
+      }, { passive: false });
     }
 
     async loadObject() {
