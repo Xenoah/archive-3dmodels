@@ -1225,7 +1225,7 @@ html[data-theme="dark"] .toolbar select {
 .model-card:focus-within {
   border-color: var(--accent);
   box-shadow: var(--shadow);
-  transform: scale(1.01);
+  transform: translateY(-2px);
 }
 
 .card-main {
