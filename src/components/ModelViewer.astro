@@ -2,7 +2,6 @@
 const { source, title = "3D preview", variant = "detail", autoload = true } = Astro.props;
 const base = import.meta.env.BASE_URL.replace(/\/$/, "");
 const isThumbnail = variant === "thumbnail";
-const isCompact = variant === "thumbnail" || variant === "list";
 ---
 
 <div
@@ -16,7 +15,7 @@ const isCompact = variant === "thumbnail" || variant === "list";
 >
   <canvas aria-label={title}></canvas>
   {
-    isCompact ? (
+    isThumbnail ? (
       <span class="model-viewer-status compact">Loading {source.type.toUpperCase()}</span>
     ) : (
       <div class="model-viewer-ui">
@@ -50,7 +49,6 @@ const isCompact = variant === "thumbnail" || variant === "list";
   import { STLLoader } from "three/examples/jsm/loaders/STLLoader.js";
 
   const initialized = new WeakSet();
-  const snapshotUrls = new Set();
   let occtPromise = null;
 
   class ArchiveModelViewer {
@@ -62,9 +60,7 @@ const isCompact = variant === "thumbnail" || variant === "list";
       this.type = root.dataset.modelType;
       this.occtBase = root.dataset.occtBase;
       this.isThumbnail = root.dataset.viewerVariant === "thumbnail";
-      this.isListPreview = root.dataset.viewerVariant === "list";
-      this.isInteractive = !this.isThumbnail && !this.isListPreview;
-      this.spin = this.isInteractive;
+      this.spin = !this.isThumbnail;
       this.wireframe = false;
       this.materialMode = "original";
       this.lightingMode = "studio";
@@ -82,11 +78,6 @@ const isCompact = variant === "thumbnail" || variant === "list";
       this.applyLighting();
       this.fitCamera(object);
       this.status.textContent = `${this.type.toUpperCase()} preview`;
-      if (this.isListPreview) {
-        this.draw();
-        await this.captureSnapshot();
-        return;
-      }
       this.renderer.setAnimationLoop(() => this.draw());
     }
 
@@ -96,12 +87,7 @@ const isCompact = variant === "thumbnail" || variant === "list";
       this.camera = new THREE.PerspectiveCamera(42, 1, 0.01, 100000);
       this.camera.position.set(3.2, 2.5, 3.4);
 
-      this.renderer = new THREE.WebGLRenderer({
-        canvas: this.canvas,
-        antialias: true,
-        alpha: true,
-        preserveDrawingBuffer: this.isListPreview
-      });
+      this.renderer = new THREE.WebGLRenderer({ canvas: this.canvas, antialias: true, alpha: true });
       this.renderer.outputColorSpace = THREE.SRGBColorSpace;
       this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
       this.renderer.toneMappingExposure = 1.05;
@@ -109,10 +95,10 @@ const isCompact = variant === "thumbnail" || variant === "list";
       this.controls = new OrbitControls(this.camera, this.canvas);
       this.controls.enableDamping = true;
       this.controls.dampingFactor = 0.08;
-      this.controls.enabled = this.isInteractive;
+      this.controls.enabled = !this.isThumbnail;
       this.controls.enableZoom = false;
-      this.controls.enableRotate = this.isInteractive;
-      this.controls.enablePan = this.isInteractive;
+      this.controls.enableRotate = !this.isThumbnail;
+      this.controls.enablePan = !this.isThumbnail;
       this.controls.autoRotate = this.spin;
       this.controls.autoRotateSpeed = 1.3;
 
@@ -140,9 +126,6 @@ const isCompact = variant === "thumbnail" || variant === "list";
       this.root.querySelector('[data-setting="lighting"]')?.addEventListener("change", (event) => {
         this.lightingMode = event.target.value;
         this.applyLighting();
-      });
-      this.canvas.addEventListener("click", (event) => {
-        if (this.isInteractive) event.preventDefault();
       });
     }
 
@@ -265,7 +248,7 @@ const isCompact = variant === "thumbnail" || variant === "list";
       const size = box.getSize(new THREE.Vector3());
       object.position.sub(center);
       const radius = Math.max(size.x, size.y, size.z, 1);
-      const distance = radius * (this.isThumbnail || this.isListPreview ? 5.2 : 1.8);
+      const distance = radius * (this.isThumbnail ? 5.2 : 1.8);
       this.camera.near = Math.max(distance / 1000, 0.01);
       this.camera.far = distance * 1000;
       this.camera.position.set(distance * 0.9, distance * 0.68, distance * 0.92);
@@ -286,45 +269,6 @@ const isCompact = variant === "thumbnail" || variant === "list";
       }
       this.controls.update();
       this.renderer.render(this.scene, this.camera);
-    }
-
-    async captureSnapshot() {
-      const blob = await new Promise((resolve) => {
-        if (!this.canvas.toBlob) {
-          resolve(null);
-          return;
-        }
-        this.canvas.toBlob(resolve, "image/png");
-      });
-      if (!blob) return;
-
-      const url = URL.createObjectURL(blob);
-      const image = document.createElement("img");
-      image.className = "model-viewer-snapshot";
-      image.alt = this.canvas.getAttribute("aria-label") || "";
-      image.decoding = "async";
-      image.src = url;
-      snapshotUrls.add(url);
-      await image.decode?.().catch(() => undefined);
-      this.root.append(image);
-      this.root.classList.add("has-snapshot");
-      this.disposeRenderer();
-    }
-
-    disposeRenderer() {
-      this.controls?.dispose();
-      this.model?.traverse((item) => {
-        if (!item.isMesh) return;
-        item.geometry?.dispose();
-        const materials = Array.isArray(item.material) ? item.material : [item.material];
-        for (const material of materials) {
-          for (const value of Object.values(material)) {
-            if (value?.isTexture) value.dispose();
-          }
-          material.dispose?.();
-        }
-      });
-      this.renderer?.dispose();
     }
   }
 
@@ -392,10 +336,6 @@ const isCompact = variant === "thumbnail" || variant === "list";
   window.addEventListener("archive-model-viewer-activate", (event) => startModelViewer(event.detail?.root));
   window.addEventListener("archive-viewer-preference-change", (event) => {
     if (event.detail?.enabled) initModelViewers();
-  });
-  window.addEventListener("pagehide", () => {
-    for (const url of snapshotUrls) URL.revokeObjectURL(url);
-    snapshotUrls.clear();
   });
   initModelViewers();
 </script>

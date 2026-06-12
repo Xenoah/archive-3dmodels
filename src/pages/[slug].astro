@@ -20,6 +20,7 @@ const creditEn = model.credit_required === true ? "Required" : model.credit_requ
 const boolLabelJa = (value) => (value === true ? "許可" : value === false ? "不可" : "注記を確認");
 const boolLabelEn = (value) => (value === true ? "Allowed" : value === false ? "Not allowed" : "Check notes");
 const viewerSources = model.assets.viewers ?? (model.assets.viewer ? [model.assets.viewer] : []);
+const hasLegacyPreview = Boolean(model.assets.preview);
 const relatedModels = models
   .filter((item) => item.status === "public" && item.slug !== model.slug)
   .map((item) => {
@@ -83,12 +84,25 @@ const breadcrumbJsonLd = {
   robots={model.status === "public" ? "index, follow" : "noindex, follow"}
   jsonLd={[modelJsonLd, breadcrumbJsonLd]}
 >
+  {hasLegacyPreview && (
+    <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+  )}
+
   <a class="ghost-button" href={`${base}/`} data-lang-ja="モデル一覧へ戻る" data-lang-en="Back to models">モデル一覧へ戻る</a>
 
   <section class="detail-hero">
     <div class="viewer">
       {
-        viewerSources.length > 0 ? (
+        hasLegacyPreview ? (
+          <model-viewer
+            src={model.assets.preview}
+            camera-controls
+            auto-rotate
+            ar={false}
+            shadow-intensity="0.65"
+            alt={`${model.title} 3D preview`}
+          />
+        ) : viewerSources.length > 0 ? (
           <>
             <div class="viewer-stack">
               {viewerSources.map((source, index) => (

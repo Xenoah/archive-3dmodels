@@ -509,22 +509,8 @@ html[data-viewer-enabled="false"] .viewer-off-fallback {
   min-height: 0;
 }
 
-.thumb .model-viewer-3d[data-viewer-variant="thumbnail"] canvas {
+.thumb .model-viewer-3d canvas {
   cursor: pointer;
-}
-
-.model-viewer-snapshot {
-  position: absolute;
-  inset: 0;
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  pointer-events: none;
-}
-
-.model-viewer-3d.has-snapshot canvas {
-  display: none;
 }
 
 .card-body {
