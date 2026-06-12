@@ -50,6 +50,7 @@ const isCompact = variant === "thumbnail" || variant === "list";
   import { STLLoader } from "three/examples/jsm/loaders/STLLoader.js";
 
   const initialized = new WeakSet();
+  const snapshotUrls = new Set();
   let occtPromise = null;
 
   class ArchiveModelViewer {
@@ -303,7 +304,8 @@ const isCompact = variant === "thumbnail" || variant === "list";
       image.alt = this.canvas.getAttribute("aria-label") || "";
       image.decoding = "async";
       image.src = url;
-      image.addEventListener("load", () => URL.revokeObjectURL(url), { once: true });
+      snapshotUrls.add(url);
+      await image.decode?.().catch(() => undefined);
       this.root.append(image);
       this.root.classList.add("has-snapshot");
       this.disposeRenderer();
@@ -390,6 +392,10 @@ const isCompact = variant === "thumbnail" || variant === "list";
   window.addEventListener("archive-model-viewer-activate", (event) => startModelViewer(event.detail?.root));
   window.addEventListener("archive-viewer-preference-change", (event) => {
     if (event.detail?.enabled) initModelViewers();
+  });
+  window.addEventListener("pagehide", () => {
+    for (const url of snapshotUrls) URL.revokeObjectURL(url);
+    snapshotUrls.clear();
   });
   initModelViewers();
 </script>
