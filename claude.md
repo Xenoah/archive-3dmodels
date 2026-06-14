@@ -220,7 +220,7 @@ credit_required: true
 
 説明文にCopilot向けプロンプトは入れない。本文は空欄から始める。
 
-`import:all-inbox -- --apply` 後も `_inbox/{slug}` は残す。push後に pull/sync で戻ってきた `_inbox/{slug}` は、`npm run sync:uploaded -- --apply` で作成日をMarkdownへ反映してからローカルの `_uploaded/{slug}` へ移動する。
+`import:all-inbox -- --apply` は、取り込み成功後に `_inbox/{slug}` を `_uploaded/{slug}` へ移動する。処理完了後は `_inbox` 内に取り込み済みモデルを残さない。失敗したslugだけ原因確認のため `_inbox` に残る。
 
 ### 作成日維持
 
@@ -232,7 +232,7 @@ Git はOS作成日時を保持しない。GitHub Actions 上で正確な作成�
 npm.cmd run setup:hooks
 ```
 
-これで `.githooks/pre-commit` が有効になり、commit 時に `node scripts/stamp-inbox-created.mjs --stage` が走る。`_inbox/{slug}/.archive-upload.json` または `_inbox/.archive-upload.json` が生成・stageされる。
+これで `.githooks/pre-commit` が有効になり、commit 時に `node scripts/stamp-inbox-created.mjs --stage` が走る。`_inbox/{slug}/.archive-upload.json` または `_inbox/.archive-upload.json` が生成・stageされる。import成功後は元ファイルとメタデータごと `_uploaded/{slug}` に退避する。
 
 手動:
 

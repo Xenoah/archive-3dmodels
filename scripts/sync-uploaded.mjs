@@ -1,7 +1,7 @@
 import { existsSync } from "node:fs";
-import { mkdir, readdir, readFile, rename, writeFile } from "node:fs/promises";
+import { mkdir, readdir, readFile, rename, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { CONTENT_MODELS_DIR, INBOX_DIR, SLUG_RE, UPLOADED_DIR } from "./lib/constants.mjs";
+import { CONTENT_MODELS_DIR, INBOX_DIR, SLUG_RE, UPLOADED_DIR, UPLOAD_METADATA_FILENAME } from "./lib/constants.mjs";
 import { dateTimeValue, fileCreatedDate, formatYearMonth } from "./lib/date-utils.mjs";
 import { parseFrontmatter, stringifyFrontmatter } from "./lib/frontmatter.mjs";
 
@@ -55,7 +55,13 @@ for (const slug of slugs) {
   await rename(inboxDir, uploadedPath);
 }
 
+if (apply) await cleanupRootUploadMetadata();
 if (failed) process.exit(1);
+
+async function cleanupRootUploadMetadata() {
+  const metadataPath = path.join(INBOX_DIR, UPLOAD_METADATA_FILENAME);
+  if (existsSync(metadataPath)) await rm(metadataPath);
+}
 
 async function primaryModelFile(dir) {
   const files = await listFilesRecursive(dir);

@@ -213,7 +213,7 @@ npm run import:inbox {slug} -- --merge
 npm run import:inbox {slug} -- --merge --apply
 ```
 
-`import:all-inbox -- --apply` は `_inbox/{slug}` を削除・移動しません。push後に pull/sync で戻ってきた `_inbox/{slug}` は、`npm run sync:uploaded -- --apply` で作成日をMarkdownへ反映してからローカルの `_uploaded/{slug}` へ移動します。
+`import:all-inbox -- --apply` は、取り込みが成功した `_inbox/{slug}` を処理完了後に `_uploaded/{slug}` へ移動します。失敗したslugは原因確認のため `_inbox` に残ります。
 
 `_inbox` 直下に単体3Dファイルを置いた場合は、自動でフォルダ化してから取り込みます。対象は `.fbx`、`.step`、`.stp`、`.stl`、`.3mf`、`.obj`、`.glb` です。画像や説明文など、単体3Dファイルではない直下ファイルはエラーです。
 
@@ -227,7 +227,7 @@ Git はファイルのOS作成日時を保持しません。GitHub Actions 上�
 npm run setup:hooks
 ```
 
-これ以降は commit 時に自動で `_inbox/{slug}/.archive-upload.json` が作られ、GitHub Actions の import がその `createdAt` を優先して Markdown に反映します。
+これ以降は commit 時に自動で `_inbox/{slug}/.archive-upload.json` が作られ、GitHub Actions の import がその `createdAt` を優先して Markdown に反映します。取り込み完了後は `_inbox/{slug}` ごと `_uploaded/{slug}` に退避され、元ファイルとメタデータが保管されます。
 
 hookを使わず手動で刻印する場合:
 
