@@ -217,6 +217,39 @@ npm run import:inbox {slug} -- --merge --apply
 
 `_inbox` 直下に単体3Dファイルを置いた場合は、自動でフォルダ化してから取り込みます。対象は `.fbx`、`.step`、`.stp`、`.stl`、`.3mf`、`.obj`、`.glb` です。画像や説明文など、単体3Dファイルではない直下ファイルはエラーです。
 
+## 作成日の維持
+
+Git はファイルのOS作成日時を保持しません。GitHub Actions 上では checkout された日時や初回コミット日時しか分からないため、正確な作成日を維持したい場合は push 前に `_inbox` の日時メタデータを作ります。
+
+初回だけローカルhookを有効化:
+
+```bash
+npm run setup:hooks
+```
+
+これ以降は commit 時に自動で `_inbox/{slug}/.archive-upload.json` が作られ、GitHub Actions の import がその `createdAt` を優先して Markdown に反映します。
+
+hookを使わず手動で刻印する場合:
+
+```bash
+npm run stamp:inbox
+git add _inbox
+```
+
+Windows PowerShell では:
+
+```powershell
+npm.cmd run setup:hooks
+npm.cmd run stamp:inbox
+git add _inbox
+```
+
+既存の `.archive-upload.json` に入っている `createdAt` は通常上書きしません。作り直す場合だけ:
+
+```bash
+npm run stamp:inbox -- --force
+```
+
 ## 取り込み時の初期値
 
 新規取り込みの既定値:

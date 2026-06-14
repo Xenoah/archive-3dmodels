@@ -28,6 +28,7 @@ import {
   SLUG_RE,
   STANDALONE_MODEL_EXTENSIONS,
   STATUSES,
+  UPLOAD_METADATA_FILENAME,
   WARN_FILE_BYTES
 } from "./constants.mjs";
 import { dateTimeValue, fileCreatedDate, formatYearMonth } from "./date-utils.mjs";
@@ -118,7 +119,7 @@ async function validateInbox(report) {
   if (!existsSync(INBOX_DIR)) return;
   const entries = await readdir(INBOX_DIR, { withFileTypes: true });
   for (const entry of entries) {
-    if (entry.name === ".gitkeep") continue;
+    if (entry.name === ".gitkeep" || entry.name === UPLOAD_METADATA_FILENAME) continue;
     const fullPath = path.join(INBOX_DIR, entry.name);
     if (entry.isFile()) {
       const ext = path.extname(entry.name).toLowerCase();

@@ -8,7 +8,8 @@ import {
   IMAGE_EXTENSIONS,
   INBOX_DIR,
   PREVIEW_EXTENSIONS,
-  SLUG_RE
+  SLUG_RE,
+  UPLOAD_METADATA_FILENAME
 } from "./lib/constants.mjs";
 import {
   currentDateTime,
@@ -42,7 +43,9 @@ if (existsSync(modelDir) && !merge) {
   process.exit(1);
 }
 
-const entries = (await readdir(inboxDir, { withFileTypes: true })).filter((entry) => entry.isFile());
+const entries = (await readdir(inboxDir, { withFileTypes: true })).filter(
+  (entry) => entry.isFile() && entry.name !== UPLOAD_METADATA_FILENAME
+);
 const forbidden = entries.filter(
   (entry) =>
     FORBIDDEN_FILENAMES.has(entry.name.toLowerCase()) ||

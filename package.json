@@ -8,6 +8,8 @@
     "import:inbox": "node scripts/import-inbox.mjs",
     "import:all-inbox": "node scripts/import-all-inbox.mjs",
     "sync:uploaded": "node scripts/sync-uploaded.mjs",
+    "stamp:inbox": "node scripts/stamp-inbox-created.mjs",
+    "setup:hooks": "git config core.hooksPath .githooks",
     "capture:covers": "node scripts/capture-missing-covers.mjs",
     "import:loose": "node scripts/import-loose.mjs",
     "normalize:model": "node scripts/normalize-model.mjs",

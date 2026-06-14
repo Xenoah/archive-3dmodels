@@ -222,6 +222,27 @@ credit_required: true
 
 `import:all-inbox -- --apply` 後も `_inbox/{slug}` は残す。push後に pull/sync で戻ってきた `_inbox/{slug}` は、`npm run sync:uploaded -- --apply` で作成日をMarkdownへ反映してからローカルの `_uploaded/{slug}` へ移動する。
 
+### 作成日維持
+
+Git はOS作成日時を保持しない。GitHub Actions 上で正確な作成日を反映するには、push 前に `_inbox` のメタデータをコミットする必要がある。
+
+推奨:
+
+```bash
+npm.cmd run setup:hooks
+```
+
+これで `.githooks/pre-commit` が有効になり、commit 時に `node scripts/stamp-inbox-created.mjs --stage` が走る。`_inbox/{slug}/.archive-upload.json` または `_inbox/.archive-upload.json` が生成・stageされる。
+
+手動:
+
+```bash
+npm.cmd run stamp:inbox
+git add _inbox
+```
+
+`scripts/lib/date-utils.mjs` は `.archive-upload.json` の `createdAt` を最優先で読む。既存の `createdAt` は通常上書きしない。作り直す場合は `npm.cmd run stamp:inbox -- --force`。
+
 ## 検証
 
 通常確認:

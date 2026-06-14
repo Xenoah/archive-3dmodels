@@ -1,8 +1,14 @@
 import { existsSync } from "node:fs";
-import { mkdir, readdir, rename } from "node:fs/promises";
+import { mkdir, readFile, readdir, rename, writeFile } from "node:fs/promises";
 import { spawnSync } from "node:child_process";
 import path from "node:path";
-import { CONTENT_MODELS_DIR, INBOX_DIR, SLUG_RE, STANDALONE_MODEL_EXTENSIONS } from "./lib/constants.mjs";
+import {
+  CONTENT_MODELS_DIR,
+  INBOX_DIR,
+  SLUG_RE,
+  STANDALONE_MODEL_EXTENSIONS,
+  UPLOAD_METADATA_FILENAME
+} from "./lib/constants.mjs";
 
 const apply = process.argv.includes("--apply");
 const merge = process.argv.includes("--merge");
@@ -79,7 +85,9 @@ async function writeSummary(slugs, looseResult) {
 
 async function prepareLooseModelFiles() {
   const inboxEntries = await readdir(INBOX_DIR, { withFileTypes: true });
-  const looseFiles = inboxEntries.filter((entry) => entry.isFile() && entry.name !== ".gitkeep");
+  const looseFiles = inboxEntries.filter(
+    (entry) => entry.isFile() && entry.name !== ".gitkeep" && entry.name !== UPLOAD_METADATA_FILENAME
+  );
   if (looseFiles.length === 0) return { failed: false, prepared: [] };
 
   const invalid = looseFiles.filter((entry) => !STANDALONE_MODEL_EXTENSIONS.has(path.extname(entry.name).toLowerCase()));
@@ -92,6 +100,7 @@ async function prepareLooseModelFiles() {
   }
 
   const prepared = [];
+  const rootMetadata = await readUploadMetadata(INBOX_DIR);
   const reserved = new Set(
     inboxEntries
       .filter((entry) => entry.isDirectory())
@@ -109,6 +118,7 @@ async function prepareLooseModelFiles() {
     if (apply) {
       await mkdir(targetDir, { recursive: true });
       await rename(source, target);
+      await writeUploadMetadata(targetDir, entry.name, rootMetadata.files?.[entry.name]);
       console.log(`DO auto-folder ${source} -> ${target}`);
     } else {
       console.log(`PLAN auto-folder ${source} -> ${target}`);
@@ -116,6 +126,28 @@ async function prepareLooseModelFiles() {
   }
 
   return { failed: false, prepared };
+}
+
+async function readUploadMetadata(dir) {
+  const metadataPath = path.join(dir, UPLOAD_METADATA_FILENAME);
+  if (!existsSync(metadataPath)) return { version: 1, files: {} };
+  try {
+    return JSON.parse(await readFile(metadataPath, "utf8"));
+  } catch {
+    return { version: 1, files: {} };
+  }
+}
+
+async function writeUploadMetadata(dir, fileName, entry) {
+  if (!entry) return;
+  const metadata = {
+    version: 1,
+    generatedAt: new Date().toISOString(),
+    files: {
+      [fileName]: entry
+    }
+  };
+  await writeFile(path.join(dir, UPLOAD_METADATA_FILENAME), `${JSON.stringify(metadata, null, 2)}\n`);
 }
 
 function slugFromFileName(fileName) {

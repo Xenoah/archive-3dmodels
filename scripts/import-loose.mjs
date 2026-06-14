@@ -1,7 +1,7 @@
 import { existsSync } from "node:fs";
-import { mkdir, readdir, rename } from "node:fs/promises";
+import { copyFile, mkdir, readdir, rename } from "node:fs/promises";
 import path from "node:path";
-import { INBOX_DIR, SLUG_RE } from "./lib/constants.mjs";
+import { INBOX_DIR, SLUG_RE, UPLOAD_METADATA_FILENAME } from "./lib/constants.mjs";
 
 const slug = process.argv[2];
 const apply = process.argv.includes("--apply");
@@ -17,7 +17,7 @@ if (!existsSync(INBOX_DIR)) {
 }
 
 const entries = await readdir(INBOX_DIR, { withFileTypes: true });
-const files = entries.filter((entry) => entry.isFile() && entry.name !== ".gitkeep");
+const files = entries.filter((entry) => entry.isFile() && entry.name !== ".gitkeep" && entry.name !== UPLOAD_METADATA_FILENAME);
 if (files.length === 0) {
   console.log("[INFO] no loose files found.");
   process.exit(0);
@@ -34,4 +34,6 @@ if (apply) {
   for (const file of files) {
     await rename(path.join(INBOX_DIR, file.name), path.join(target, file.name));
   }
+  const metadata = path.join(INBOX_DIR, UPLOAD_METADATA_FILENAME);
+  if (existsSync(metadata)) await copyFile(metadata, path.join(target, UPLOAD_METADATA_FILENAME));
 }

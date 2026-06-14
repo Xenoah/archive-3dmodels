@@ -1,19 +1,25 @@
 import { execFileSync } from "node:child_process";
 import { existsSync } from "node:fs";
-import { open, stat } from "node:fs/promises";
+import { open, readFile, stat } from "node:fs/promises";
 import path from "node:path";
-import { UPLOADED_DIR } from "./constants.mjs";
+import { UPLOADED_DIR, UPLOAD_METADATA_FILENAME } from "./constants.mjs";
 
 export async function fileCreatedYearMonth(file, options = {}) {
   return formatYearMonth(await fileCreatedDate(file, options));
 }
 
 export async function fileCreatedDate(file, options = {}) {
+  const uploadMetadataDate = await uploadMetadataDateForFile(file);
+  if (uploadMetadataDate) return uploadMetadataDate;
+
   const metadataDate = await modelMetadataDate(file);
   if (metadataDate) return metadataDate;
 
   const uploadedFile = uploadedOriginalCandidate(file, options);
   if (uploadedFile) {
+    const uploadedFileMetadataDate = await uploadMetadataDateForFile(uploadedFile);
+    if (uploadedFileMetadataDate) return uploadedFileMetadataDate;
+
     const uploadedMetadataDate = await modelMetadataDate(uploadedFile);
     if (uploadedMetadataDate) return uploadedMetadataDate;
 
@@ -90,6 +96,20 @@ async function modelMetadataDate(file) {
 
   const genericDate = /\b(\d{4}[-/:]\d{1,2}[-/:]\d{1,2}(?:[T\s]\d{1,2}:\d{1,2}(?::\d{1,2})?)?)\b/.exec(header);
   return parseLooseDate(genericDate?.[1]);
+}
+
+async function uploadMetadataDateForFile(file) {
+  const metadataPath = path.join(path.dirname(file), UPLOAD_METADATA_FILENAME);
+  if (!existsSync(metadataPath)) return null;
+
+  try {
+    const metadata = JSON.parse(await readFile(metadataPath, "utf8"));
+    const fileKey = path.basename(file);
+    const entry = metadata.files?.[fileKey];
+    return parseDateLike(entry?.createdAt);
+  } catch {
+    return null;
+  }
 }
 
 async function readHeaderText(file, byteLength) {

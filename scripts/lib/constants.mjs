@@ -5,6 +5,7 @@ export const UPLOADED_DIR = "_uploaded";
 export const REPORTS_DIR = "reports";
 export const GENERATED_DATA_FILE = "src/data/models.generated.json";
 export const PUBLIC_DIR = "public";
+export const UPLOAD_METADATA_FILENAME = ".archive-upload.json";
 
 export const CATEGORIES = new Set([
   "character",

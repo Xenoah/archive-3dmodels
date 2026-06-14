@@ -1,0 +1,2 @@
+#!/bin/sh
+node scripts/stamp-inbox-created.mjs --stage
