@@ -1,3 +1,9 @@
 CC BY-NC 4.0
 
 See: https://creativecommons.org/licenses/by-nc/4.0/
+
+Definition:
+Attribution-NonCommercial 4.0 International lets users share and adapt the work for noncommercial purposes, provided they give appropriate credit, indicate if changes were made, and do not apply additional legal or technical restrictions.
+
+Japanese summary:
+原作者のクレジット（氏名、作品タイトル、ライセンス等）を表示し、非営利目的で利用することを主な条件として、改変や再配布ができるCreative Commonsライセンスです。

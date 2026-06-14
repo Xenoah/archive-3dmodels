@@ -99,7 +99,7 @@ _
 title: "Model Name"
 category: "other"
 tags: []
-license: "CC BY 4.0"
+license: "CC BY-NC 4.0"
 status: "public"
 unit: "mm"
 ```
@@ -118,7 +118,7 @@ updated: "2026年06月"
 updatedAt: "2026-06-07"
 scale: ""
 commercial_use: false
-redistribution: false
+redistribution: true
 modification: true
 credit_required: true
 aliases: []
@@ -255,11 +255,11 @@ npm run stamp:inbox -- --force
 新規取り込みの既定値:
 
 ```yaml
-license: "CC BY 4.0"
+license: "CC BY-NC 4.0"
 status: "public"
 unit: "mm"
 commercial_use: false
-redistribution: false
+redistribution: true
 modification: true
 credit_required: true
 ```

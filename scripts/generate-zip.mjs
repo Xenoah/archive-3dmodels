@@ -75,8 +75,17 @@ function renderZipReadme(model, data) {
     `- Slug: ${model.slug}`,
     `- Version: ${model.version || "unspecified"}`,
     `- License: ${model.license}`,
+    licenseUrl(model.license) ? `- License URL: ${licenseUrl(model.license)}` : null,
     `- Unit: ${model.unit}`,
     model.scale ? `- Scale: ${model.scale}` : null,
+    "",
+    "Attribution / Credit",
+    "--------------------",
+    "",
+    `- Creator: ${data.author || "Xenoah"}`,
+    `- Work title: ${model.title}`,
+    `- License: ${model.license}`,
+    licenseUrl(model.license) ? `- License URL: ${licenseUrl(model.license)}` : null,
     "",
     "License Conditions",
     "------------------",
@@ -85,6 +94,8 @@ function renderZipReadme(model, data) {
     `- 改変: ${formatBool(data.modification)}`,
     `- 再配布: ${formatBool(data.redistribution)}`,
     `- クレジット: ${data.credit_required === true ? "必要" : data.credit_required === false ? "不要" : "要確認"}`,
+    "",
+    ...licenseDefinitionLines(model.license),
     "",
     "Notice",
     "------",
@@ -99,6 +110,42 @@ function renderZipReadme(model, data) {
   ]
     .filter((line) => line !== null)
     .join("\n");
+}
+
+function licenseUrl(license) {
+  const normalized = normalizeLicense(license);
+  if (normalized === "CC BY-NC 4.0") return "https://creativecommons.org/licenses/by-nc/4.0/";
+  if (normalized === "CC BY 4.0") return "https://creativecommons.org/licenses/by/4.0/";
+  if (normalized === "CC BY-SA 4.0") return "https://creativecommons.org/licenses/by-sa/4.0/";
+  if (normalized === "CC BY-NC-SA 4.0") return "https://creativecommons.org/licenses/by-nc-sa/4.0/";
+  if (normalized === "CC0") return "https://creativecommons.org/publicdomain/zero/1.0/";
+  return "";
+}
+
+function licenseDefinitionLines(license) {
+  const normalized = normalizeLicense(license);
+  if (normalized !== "CC BY-NC 4.0") return [];
+  return [
+    "CC BY-NC 4.0 Definition",
+    "-----------------------",
+    "",
+    "JA: CC BY-NC 4.0 は、原作者のクレジット（氏名、作品タイトル、ライセンス等）を表示し、非営利目的で利用することを主な条件として、作品を共有、改変、再配布できるCreative Commonsライセンスです。",
+    "JA: 利用者は、改変の有無を示し、法的または技術的な追加制限をかけないでください。",
+    "EN: CC BY-NC 4.0 lets you share and adapt the work for noncommercial purposes, as long as you give appropriate credit, indicate changes, and do not apply additional legal or technical restrictions."
+  ];
+}
+
+function normalizeLicense(license) {
+  const value = String(license || "")
+    .toUpperCase()
+    .replace(/_/g, "-")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (/^CC[- ]BY[- ](?:NC|NS)(?: 4\.0)?$/.test(value)) return "CC BY-NC 4.0";
+  if (/^CC[- ]BY(?: 4\.0)?$/.test(value)) return "CC BY 4.0";
+  if (/^CC[- ]BY[- ]SA(?: 4\.0)?$/.test(value)) return "CC BY-SA 4.0";
+  if (/^CC[- ]BY[- ](?:NC|NS)[- ]SA(?: 4\.0)?$/.test(value)) return "CC BY-NC-SA 4.0";
+  return value;
 }
 
 async function clearOldZips(dir) {

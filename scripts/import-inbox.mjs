@@ -168,7 +168,7 @@ async function initialMarkdown(slugValue, sourceMarkdown, dateFallbacks) {
       summary: data.summary || "",
       category: data.category || "other",
       tags: Array.isArray(data.tags) ? data.tags : [],
-      license: data.license || "CC BY 4.0",
+      license: data.license || "CC BY-NC 4.0",
       version: data.version || "0.1.0",
       status: data.status || "public",
       unit: data.unit || "mm",
@@ -178,7 +178,7 @@ async function initialMarkdown(slugValue, sourceMarkdown, dateFallbacks) {
       uploadedAt: dateTimeValue(data.uploadedAt, dateFallbacks.uploadedAt),
       updatedAt: dateTimeValue(data.updatedAt, data.createdAt || dateFallbacks.createdAt),
       commercial_use: data.commercial_use ?? false,
-      redistribution: data.redistribution ?? false,
+      redistribution: data.redistribution ?? true,
       modification: data.modification ?? true,
       credit_required: data.credit_required ?? true
     },

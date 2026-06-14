@@ -209,11 +209,11 @@ npm run import:inbox {slug} -- --merge --apply
 新規importの既定値:
 
 ```yaml
-license: "CC BY 4.0"
+license: "CC BY-NC 4.0"
 status: "public"
 unit: "mm"
 commercial_use: false
-redistribution: false
+redistribution: true
 modification: true
 credit_required: true
 ```
