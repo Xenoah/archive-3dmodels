@@ -1,0 +1,71 @@
+{
+  "version": 1,
+  "generatedAt": "2026-06-14T15:08:31.414Z",
+  "files": {
+    "1.png": {
+      "createdAt": "2026-06-07T04:46:59Z",
+      "modifiedAt": "2026-06-07T04:46:59Z",
+      "size": 357275
+    },
+    "2.png": {
+      "createdAt": "2026-06-07T04:26:02Z",
+      "modifiedAt": "2026-06-07T04:26:02Z",
+      "size": 76515
+    },
+    "BodyJoint.stl": {
+      "createdAt": "2022-04-30T09:18:01Z",
+      "modifiedAt": "2022-04-30T09:18:01Z",
+      "size": 1069592
+    },
+    "BodyJoint2.stl": {
+      "createdAt": "2022-05-01T01:00:44Z",
+      "modifiedAt": "2022-05-01T01:00:44Z",
+      "size": 1244648
+    },
+    "FrontBody.stl": {
+      "createdAt": "2022-04-30T01:59:31Z",
+      "modifiedAt": "2022-04-30T01:59:31Z",
+      "size": 158284
+    },
+    "FrontBody2.stl": {
+      "createdAt": "2022-04-30T21:46:52Z",
+      "modifiedAt": "2022-04-30T21:46:52Z",
+      "size": 2811434
+    },
+    "Grip.stl": {
+      "createdAt": "2022-04-30T09:17:19Z",
+      "modifiedAt": "2022-04-30T09:17:19Z",
+      "size": 2737050
+    },
+    "MachineGun1.f3d": {
+      "createdAt": "2026-06-07T04:26:35Z",
+      "modifiedAt": "2026-06-07T04:26:35Z",
+      "size": 2108356
+    },
+    "MachineGun1.step": {
+      "createdAt": "2026-06-07T04:26:48Z",
+      "modifiedAt": "2026-06-07T04:26:48Z",
+      "size": 1319097
+    },
+    "SlideBody.stl": {
+      "createdAt": "2022-04-30T01:58:54Z",
+      "modifiedAt": "2022-04-30T01:58:54Z",
+      "size": 225184
+    },
+    "Slider_L.stl": {
+      "createdAt": "2022-04-30T01:58:31Z",
+      "modifiedAt": "2022-04-30T01:58:31Z",
+      "size": 63484
+    },
+    "Slider_R.stl": {
+      "createdAt": "2022-04-30T01:59:05Z",
+      "modifiedAt": "2022-04-30T01:59:05Z",
+      "size": 66184
+    },
+    "Trigger.stl": {
+      "createdAt": "2022-04-30T01:59:15Z",
+      "modifiedAt": "2022-04-30T01:59:15Z",
+      "size": 101084
+    }
+  }
+}
