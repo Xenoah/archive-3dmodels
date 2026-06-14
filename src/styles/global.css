@@ -39,6 +39,10 @@ html[data-theme="dark"] {
   box-sizing: border-box;
 }
 
+[hidden] {
+  display: none !important;
+}
+
 html {
   background:
     linear-gradient(180deg, #fbfbf8 0%, var(--bg) 380px),

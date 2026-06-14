@@ -450,6 +450,10 @@ const collectionJsonLd = {
       render();
     }
 
+    form?.addEventListener("submit", (event) => {
+      event.preventDefault();
+      resetAndRender();
+    });
     form?.addEventListener("input", resetAndRender);
     form?.addEventListener("change", resetAndRender);
     for (const button of suggestionButtons) {
