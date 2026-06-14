@@ -49,6 +49,7 @@ const isThumbnail = variant === "thumbnail";
   import { STLLoader } from "three/examples/jsm/loaders/STLLoader.js";
 
   const initialized = new WeakSet();
+  const viewerInstances = new WeakMap();
   let occtPromise = null;
 
   class ArchiveModelViewer {
@@ -65,6 +66,7 @@ const isThumbnail = variant === "thumbnail";
       this.materialMode = "original";
       this.lightingMode = "studio";
       this.meshes = [];
+      this.resizeFrame = 0;
     }
 
     async start() {
@@ -78,6 +80,14 @@ const isThumbnail = variant === "thumbnail";
       this.applyLighting();
       this.fitCamera(object);
       this.status.textContent = `${this.type.toUpperCase()} preview`;
+      this.root.classList.add("is-loaded");
+
+      if (this.isThumbnail) {
+        this.draw();
+        this.installThumbnailResizeObserver();
+        return;
+      }
+
       this.renderer.setAnimationLoop(() => this.draw());
     }
 
@@ -87,7 +97,12 @@ const isThumbnail = variant === "thumbnail";
       this.camera = new THREE.PerspectiveCamera(42, 1, 0.01, 100000);
       this.camera.position.set(3.2, 2.5, 3.4);
 
-      this.renderer = new THREE.WebGLRenderer({ canvas: this.canvas, antialias: true, alpha: true });
+      this.renderer = new THREE.WebGLRenderer({
+        canvas: this.canvas,
+        antialias: true,
+        alpha: true,
+        preserveDrawingBuffer: this.isThumbnail
+      });
       this.renderer.outputColorSpace = THREE.SRGBColorSpace;
       this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
       this.renderer.toneMappingExposure = 1.05;
@@ -126,6 +141,20 @@ const isThumbnail = variant === "thumbnail";
       this.root.querySelector('[data-setting="lighting"]')?.addEventListener("change", (event) => {
         this.lightingMode = event.target.value;
         this.applyLighting();
+      });
+    }
+
+    installThumbnailResizeObserver() {
+      if (!("ResizeObserver" in window)) return;
+      this.resizeObserver = new ResizeObserver(() => this.requestDraw());
+      this.resizeObserver.observe(this.root);
+    }
+
+    requestDraw() {
+      if (this.resizeFrame) return;
+      this.resizeFrame = window.requestAnimationFrame(() => {
+        this.resizeFrame = 0;
+        this.draw();
       });
     }
 
@@ -323,10 +352,13 @@ const isThumbnail = variant === "thumbnail";
     if (!root || initialized.has(root)) return;
     if (root.dataset.viewerVariant === "thumbnail" && document.documentElement.dataset.viewerEnabled === "false") return;
     initialized.add(root);
-    new ArchiveModelViewer(root).start().then(() => {
+    const viewer = new ArchiveModelViewer(root);
+    viewerInstances.set(root, viewer);
+    viewer.start().then(() => {
       root.dataset.loaded = "true";
     }).catch((error) => {
       root.dataset.loaded = "true";
+      root.classList.add("is-loaded");
       root.querySelector(".model-viewer-status").textContent = "Preview failed";
       console.error(error);
     });
