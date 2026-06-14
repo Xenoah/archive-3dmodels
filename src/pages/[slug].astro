@@ -21,16 +21,94 @@ const boolLabelJa = (value) => (value === true ? "許可" : value === false ? "�
 const boolLabelEn = (value) => (value === true ? "Allowed" : value === false ? "Not allowed" : "Check notes");
 const viewerSources = model.assets.viewers ?? (model.assets.viewer ? [model.assets.viewer] : []);
 const hasLegacyPreview = Boolean(model.assets.preview);
+const relatedLimit = 6;
+const relatedProfiles = new Map(models.map((item) => [item.slug, buildRelatedProfile(item)]));
+const currentRelatedProfile = relatedProfiles.get(model.slug);
 const relatedModels = models
   .filter((item) => item.status === "public" && item.slug !== model.slug)
   .map((item) => {
-    const sharedTags = (item.tags ?? []).filter((tag) => (model.tags ?? []).includes(tag)).length;
-    const categoryScore = item.category === model.category ? 1 : 0;
-    return { ...item, relatedScore: sharedTags * 2 + categoryScore };
+    const score = relatedScore(currentRelatedProfile, relatedProfiles.get(item.slug));
+    return { ...item, relatedScore: score.total, relatedSignal: score.signal };
   })
-  .filter((item) => item.relatedScore > 0)
-  .sort((a, b) => b.relatedScore - a.relatedScore || a.title.localeCompare(b.title))
-  .slice(0, 3);
+  .filter((item) => item.relatedSignal >= 0.6)
+  .sort(
+    (a, b) =>
+      b.relatedScore - a.relatedScore ||
+      (b.updatedAt || b.createdAt || "").localeCompare(a.updatedAt || a.createdAt || "") ||
+      a.title.localeCompare(b.title, "ja")
+  )
+  .slice(0, relatedLimit);
+
+function relatedScore(current, candidate) {
+  if (!current || !candidate) return { total: 0, signal: 0 };
+
+  const sharedTags = intersectionSize(current.tags, candidate.tags);
+  const tagUnion = unionSize(current.tags, candidate.tags);
+  const tagScore = tagUnion > 0 ? (sharedTags / tagUnion) * 8 + sharedTags * 0.8 : 0;
+
+  const categoryScore =
+    current.category && candidate.category && current.category === candidate.category && current.category !== "other" ? 2.2 : 0;
+  const titleScore = jaccard(current.titleTokens, candidate.titleTokens) * 4.8;
+  const textScore = jaccard(current.textTokens, candidate.textTokens) * 3.4;
+  const signal = tagScore + categoryScore + titleScore + textScore;
+
+  const licenseScore = current.license && current.license === candidate.license ? 0.1 : 0;
+  const formatScore = jaccard(current.formats, candidate.formats) * 0.3;
+  const dateScore = dateProximity(current.date, candidate.date) * 0.35;
+
+  return { total: signal + licenseScore + formatScore + dateScore, signal };
+}
+
+function buildRelatedProfile(item) {
+  return {
+    category: item.category,
+    date: item.createdAt || item.updatedAt,
+    formats: new Set((item.assets.sources ?? []).map((source) => source.ext).filter(Boolean)),
+    license: item.license,
+    tags: new Set(item.tags ?? []),
+    textTokens: modelTokens(item),
+    titleTokens: tokenize(item.title)
+  };
+}
+
+function modelTokens(item) {
+  return tokenize([item.summary, item.bodyText, ...(item.tags ?? []), ...(item.aliases ?? [])].join(" "));
+}
+
+function tokenize(value) {
+  const stopWords = new Set(["3d", "model", "models", "stl", "step", "fbx", "v", "ver", "version", "the", "and", "for", "with", "to", "on", "of"]);
+  return new Set(
+    String(value || "")
+      .normalize("NFKC")
+      .toLocaleLowerCase("ja-JP")
+      .split(/[^\p{Letter}\p{Number}]+/gu)
+      .filter((token) => token.length >= 2 && !stopWords.has(token) && !/^\d+$/.test(token) && !/^v\d+$/.test(token))
+  );
+}
+
+function jaccard(left, right) {
+  const union = unionSize(left, right);
+  return union === 0 ? 0 : intersectionSize(left, right) / union;
+}
+
+function intersectionSize(left, right) {
+  let count = 0;
+  for (const item of left) if (right.has(item)) count++;
+  return count;
+}
+
+function unionSize(left, right) {
+  return new Set([...left, ...right]).size;
+}
+
+function dateProximity(left, right) {
+  if (!left || !right) return 0;
+  const leftTime = Date.parse(left);
+  const rightTime = Date.parse(right);
+  if (Number.isNaN(leftTime) || Number.isNaN(rightTime)) return 0;
+  const days = Math.abs(leftTime - rightTime) / 86400000;
+  return Math.max(0, 1 - days / 365);
+}
 const modelJsonLd = {
   "@context": "https://schema.org",
   "@type": "CreativeWork",
@@ -249,9 +327,24 @@ const breadcrumbJsonLd = {
       <div class="related-grid">
         {relatedModels.map((item) => (
           <a class="related-card" href={modelUrl(item.slug)}>
-            <span>{item.category}</span>
-            <strong>{item.title}</strong>
-            <small>{(item.tags ?? []).slice(0, 3).map((tag) => `#${tag}`).join(" ")}</small>
+            <div class="related-thumb" aria-hidden="true">
+              {item.assets.cover ? (
+                <img src={item.assets.cover} alt="" loading="lazy" />
+              ) : (
+                <div class="model-fallback compact">
+                  <div class="cube-mark">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                  </div>
+                </div>
+              )}
+            </div>
+            <div class="related-body">
+              <span>{item.category}</span>
+              <strong>{item.title}</strong>
+              <small>{(item.tags ?? []).slice(0, 3).map((tag) => `#${tag}`).join(" ")}</small>
+            </div>
           </a>
         ))}
       </div>

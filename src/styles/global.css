@@ -936,11 +936,14 @@ html[data-viewer-enabled="false"] .viewer-off-fallback {
 
 .related-card {
   display: grid;
-  gap: 8px;
+  grid-template-columns: 104px minmax(0, 1fr);
+  gap: 12px;
+  align-items: stretch;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.82);
-  padding: 14px;
+  overflow: hidden;
+  padding: 10px;
   text-decoration: none;
 }
 
@@ -955,7 +958,49 @@ html[data-viewer-enabled="false"] .viewer-off-fallback {
 }
 
 .related-card strong {
+  color: var(--text);
   font-size: 1rem;
+  line-height: 1.25;
+}
+
+.related-thumb {
+  aspect-ratio: 4 / 3;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface-soft);
+  display: grid;
+  min-height: 90px;
+  overflow: hidden;
+  place-items: center;
+}
+
+.related-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.related-thumb .model-fallback {
+  min-height: 100%;
+  width: 100%;
+}
+
+.related-thumb .cube-mark {
+  transform: scale(0.54) rotateX(58deg) rotate(42deg);
+}
+
+.related-body {
+  display: grid;
+  gap: 6px;
+  align-content: center;
+  min-width: 0;
+}
+
+.related-body span,
+.related-body small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .markdown {
@@ -1063,6 +1108,14 @@ html[data-viewer-enabled="false"] .viewer-off-fallback {
   .related-grid {
     grid-template-columns: 1fr;
   }
+
+  .related-card {
+    grid-template-columns: 96px minmax(0, 1fr);
+  }
+
+  .related-thumb {
+    min-height: 82px;
+  }
 }
 
 html[data-theme="dark"] .site-header {
@@ -1081,6 +1134,10 @@ html[data-theme="dark"] .toolbar input,
 html[data-theme="dark"] .toolbar select {
   background: #151916;
   color: var(--text);
+}
+
+html[data-theme="dark"] .related-card {
+  background: rgba(27, 32, 29, 0.9);
 }
 
 .archive-panel {
