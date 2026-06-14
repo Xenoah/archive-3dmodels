@@ -507,9 +507,6 @@ html[data-viewer-enabled="false"] .viewer-off-fallback {
 
 .thumb .model-viewer-3d canvas {
   min-height: 0;
-}
-
-.thumb .model-viewer-3d canvas {
   cursor: pointer;
 }
 

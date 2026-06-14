@@ -1,5 +1,6 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
+import ModelViewer from "../components/ModelViewer.astro";
 import models from "../data/models.generated.json";
 
 const publicModels = models.filter((model) => model.status === "public");
@@ -208,6 +209,25 @@ const collectionJsonLd = {
                     {model.status === "draft" && <div class="draft-badge">DRAFT</div>}
                     {model.assets.cover ? (
                       <img src={model.assets.cover} alt="" loading={index < defaultPageSize ? "eager" : "lazy"} />
+                    ) : model.assets.viewer ? (
+                      <>
+                        <div class="viewer-thumb">
+                          <ModelViewer
+                            source={model.assets.viewer}
+                            title={`${model.title} thumbnail preview`}
+                            variant="thumbnail"
+                            autoload={false}
+                          />
+                        </div>
+                        <div class="model-fallback viewer-off-fallback" aria-hidden="true">
+                          <div class="cube-mark">
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                          </div>
+                          <strong>3D</strong>
+                        </div>
+                      </>
                     ) : (
                       <div class="model-fallback" aria-hidden="true">
                         <div class="cube-mark">
@@ -371,6 +391,19 @@ const collectionJsonLd = {
         .sort(compareCards);
     }
 
+    function startVisibleViewers(items) {
+      if (document.documentElement.dataset.viewerEnabled === "false") return;
+      for (const card of items) {
+        const viewer = card.querySelector(".model-viewer-3d");
+        if (!viewer || viewer.dataset.loaded === "true") continue;
+        if (window.archiveModelViewerStart) {
+          window.archiveModelViewerStart(viewer);
+        } else {
+          window.dispatchEvent(new CustomEvent("archive-model-viewer-activate", { detail: { root: viewer } }));
+        }
+      }
+    }
+
     function renderSuggestions() {
       if (!suggestionPanel) return;
       const query = normalize(fields.q.value);
@@ -396,6 +429,7 @@ const collectionJsonLd = {
       for (const card of filtered) grid.append(card);
       for (const card of pageItems) card.hidden = false;
       grid.dataset.view = state.view;
+      startVisibleViewers(pageItems);
 
       if (resultCount) {
         resultCount.textContent = `${filtered.length} / ${cards.length} 件`;
@@ -449,6 +483,7 @@ const collectionJsonLd = {
         render();
       });
     }
+    window.addEventListener("archive-viewer-preference-change", render);
     render();
   </script>
 </BaseLayout>
