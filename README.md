@@ -204,6 +204,8 @@ npm run import:all-inbox
 npm run import:all-inbox -- --apply
 ```
 
+GitHub Actions の `Import Inbox` は `_inbox/**` への push で起動し、取り込み後に `npm run capture:covers -- --fallback-only` を実行します。画像がないSTLモデルには `auto-cover.png` が生成され、取り込みコミットに含まれます。
+
 既存モデルへ追加する場合:
 
 ```bash
@@ -235,8 +237,34 @@ credit_required: true
 
 ```bash
 npm run validate
+npm run capture:covers
 npm run generate
 npm run build
+```
+
+ローカルでカバーだけ生成する場合:
+
+```bash
+npm run capture:covers
+```
+
+Chrome/Edge のヘッドレス撮影が動かない環境では、ブラウザを使わない簡易STLレンダーで生成します。
+
+```bash
+npm run capture:covers -- --fallback-only
+```
+
+既存の `auto-cover.png` を作り直す場合:
+
+```bash
+npm run capture:covers -- --force
+```
+
+Windows PowerShell で `npm.ps1` の実行ポリシーに止められる場合は `npm.cmd` を使います。
+
+```powershell
+npm.cmd run capture:covers -- --fallback-only
+npm.cmd run generate
 ```
 
 `npm run build` は以下を実行します。
@@ -309,5 +337,6 @@ Google tag / Google Analytics: Google の規約・ポリシーに従う
 
 - 追加ファイルはブラックリスト方式。`FORBIDDEN_EXTENSIONS` と `FORBIDDEN_FILENAMES` に該当しない `source/` 配下のファイルはソース一覧と個別DLに反映される。
 - 一覧ページは3DプレビューがデフォルトON。上部メニューの `3D ON/OFF` で切り替える。cover/thumbnail/photos がある場合は画像を優先し、画像がない場合は3Dプレビューを表示する。
-- `npm run capture:covers` で、画像がないSTLモデルから `auto-cover.png` を自動生成できる。既に `auto-cover.png` がある場合はスキップし、再生成したい場合は `npm run capture:covers -- --force` を使う。後から cover/thumbnail/photos を追加した場合は手動画像が優先される。
+- `npm run capture:covers` で、画像がないSTLモデルから `auto-cover.png` を自動生成できる。既に `auto-cover.png` がある場合はスキップし、再生成したい場合は `npm run capture:covers -- --force` を使う。Chrome/Edge が使えない環境では `npm run capture:covers -- --fallback-only` でブラウザなしの簡易STLレンダーを使う。後から cover/thumbnail/photos を追加した場合は手動画像が優先される。
+- `_inbox/**` push 時の `Import Inbox` Action は、取り込み後に `npm run capture:covers -- --fallback-only` を実行して `auto-cover.png` も一緒にコミットする。
 - 詳細ページの3Dプレビューは `assets.viewers` にある対応ファイルだけを表示する。対応形式は FBX、STEP/STP、STL。

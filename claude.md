@@ -101,7 +101,9 @@ STEP/STP は `occt-import-js` を使用する。`npm run generate` で `public/v
 
 追加ファイルはブラックリスト方式。`FORBIDDEN_EXTENSIONS` と `FORBIDDEN_FILENAMES` に該当しない `source/` 配下のファイルは生成データ、公開アセット、個別DLに反映される。
 
-`npm run capture:covers` で画像がないSTLモデルから `auto-cover.png` を自動生成できる。既に `auto-cover.png` がある場合はスキップし、再生成したい場合は `npm run capture:covers -- --force` を使う。`auto-cover.png` は手動の cover/thumbnail/photos より優先度が低い。
+`npm run capture:covers` で画像がないSTLモデルから `auto-cover.png` を自動生成できる。既に `auto-cover.png` がある場合はスキップし、再生成したい場合は `npm run capture:covers -- --force` を使う。Chrome/Edge のヘッドレス撮影が使えない環境では `npm run capture:covers -- --fallback-only` でブラウザなしの簡易STLレンダーを使う。`auto-cover.png` は手動の cover/thumbnail/photos より優先度が低い。
+
+`_inbox/**` push 時の `Import Inbox` GitHub Action は、取り込み後に `npm run capture:covers -- --fallback-only` を実行して `auto-cover.png` も取り込みコミットに含める。
 
 ### 日付管理
 
@@ -195,6 +197,8 @@ npm run import:all-inbox
 npm run import:all-inbox -- --apply
 ```
 
+GitHub Actions では `_inbox/**` への push で `Import Inbox` が動き、`import:all-inbox -- --apply` の後に `capture:covers -- --fallback-only` を実行する。画像がないSTLモデルは `auto-cover.png` が生成され、取り込みコミットに含まれる。
+
 既存モデルへ追加:
 
 ```bash
@@ -223,11 +227,15 @@ credit_required: true
 通常確認:
 
 ```bash
+npm.cmd run capture:covers -- --fallback-only
+npm.cmd run generate
 npm.cmd run validate
 npm.cmd run build
 ```
 
 PowerShell環境では `npm` ではなく `npm.cmd` を使うと実行ポリシーに引っかかりにくい。
+
+ローカルで通常のカバー生成を試す場合は `npm.cmd run capture:covers`。Chrome/Edge がスクリーンショットを書けない場合は `npm.cmd run capture:covers -- --fallback-only`。既存の `auto-cover.png` を作り直す場合は `npm.cmd run capture:covers -- --force`。
 
 現在よく出る警告:
 

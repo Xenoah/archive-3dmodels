@@ -49,6 +49,9 @@ jobs:
             npm run import:all-inbox -- --apply
           fi
 
+      - name: Generate fallback covers
+        run: npm run capture:covers -- --fallback-only
+
       - name: Validate imported draft models
         run: npm run validate
 
