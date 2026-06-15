@@ -19,6 +19,7 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, "");
 const modelUrl = (slug) => `${base}/${encodeURIComponent(slug)}/`;
 const siteUrl = new URL(`${base}/`, Astro.site).href;
 const latest = listedModels.slice(0, 3);
+const previewImage = publicModels.find((model) => model.assets.cover)?.assets.cover || "";
 const defaultPageSize = 10;
 const collectionJsonLd = {
   "@context": "https://schema.org",
@@ -48,6 +49,8 @@ const collectionJsonLd = {
   titleEn="Xenoah 3D Models"
   description="Xenoah が制作・配布する3Dモデルをカテゴリ、タグ、ライセンスから探せます。"
   descriptionEn="Browse downloadable 3D models created and distributed by Xenoah by category, tag, and license."
+  image={previewImage}
+  imageAlt="Xenoah 3D Models preview"
   jsonLd={collectionJsonLd}
 >
   <section class="intro" aria-labelledby="page-title">

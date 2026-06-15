@@ -7,6 +7,7 @@ const {
   description = "ダウンロード可能な3Dモデルの静的アーカイブです。",
   descriptionEn = "3D model archive for downloads.",
   image = "",
+  imageAlt = title,
   robots = "index, follow",
   jsonLd = []
 } = Astro.props;
@@ -15,6 +16,7 @@ const canonical = Astro.url.href;
 const siteUrl = new URL(`${base}/`, Astro.site).href;
 const sitemapUrl = new URL(`${base}/sitemap.xml`, Astro.site).href;
 const imageUrl = image ? new URL(image, Astro.site).href : "";
+const imageType = imageUrl ? imageMimeType(imageUrl) : "";
 const googleSiteVerification =
   import.meta.env.PUBLIC_GOOGLE_SITE_VERIFICATION ?? "aPtYwfsh75Fol8ou1AKrAWZXEAKl97LEWKER4G2wiuQ";
 const defaultJsonLd = {
@@ -30,6 +32,15 @@ const defaultJsonLd = {
   }
 };
 const jsonLdItems = [defaultJsonLd, ...(Array.isArray(jsonLd) ? jsonLd : [jsonLd])].filter(Boolean);
+
+function imageMimeType(url) {
+  const pathname = new URL(url).pathname.toLowerCase();
+  if (pathname.endsWith(".jpg") || pathname.endsWith(".jpeg")) return "image/jpeg";
+  if (pathname.endsWith(".png")) return "image/png";
+  if (pathname.endsWith(".webp")) return "image/webp";
+  if (pathname.endsWith(".gif")) return "image/gif";
+  return "";
+}
 ---
 
 <!doctype html>
@@ -50,10 +61,14 @@ const jsonLdItems = [defaultJsonLd, ...(Array.isArray(jsonLd) ? jsonLd : [jsonLd
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonical} />
     {imageUrl && <meta property="og:image" content={imageUrl} />}
+    {imageUrl && <meta property="og:image:secure_url" content={imageUrl} />}
+    {imageUrl && imageType && <meta property="og:image:type" content={imageType} />}
+    {imageUrl && imageAlt && <meta property="og:image:alt" content={imageAlt} />}
     <meta name="twitter:card" content={imageUrl ? "summary_large_image" : "summary"} />
     <meta name="twitter:title" content={title} />
     <meta name="twitter:description" content={description} />
     {imageUrl && <meta name="twitter:image" content={imageUrl} />}
+    {imageUrl && imageAlt && <meta name="twitter:image:alt" content={imageAlt} />}
     {jsonLdItems.map((item) => <script type="application/ld+json" set:html={JSON.stringify(item)} />)}
     <script>
       const savedTheme = localStorage.getItem("archive-3dmodels-theme");

@@ -159,6 +159,7 @@ const breadcrumbJsonLd = {
   description={model.summary || `${model.title} のダウンロードページです。`}
   descriptionEn={model.summary || `${model.title} download page`}
   image={model.assets.cover || ""}
+  imageAlt={`${model.title} preview`}
   robots={model.status === "public" ? "index, follow" : "noindex, follow"}
   jsonLd={[modelJsonLd, breadcrumbJsonLd]}
 >

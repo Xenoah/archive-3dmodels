@@ -1,7 +1,9 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
+import models from "../data/models.generated.json";
 const base = import.meta.env.BASE_URL.replace(/\/$/, "");
 const termsUrl = new URL(`${base}/terms/`, Astro.site).href;
+const previewImage = models.find((model) => model.status === "public" && model.assets.cover)?.assets.cover || "";
 const termsJsonLd = {
   "@context": "https://schema.org",
   "@type": "WebPage",
@@ -21,6 +23,8 @@ const termsJsonLd = {
   titleEn="Terms | 3D Models"
   description="3Dモデルアーカイブのライセンスとダウンロード規約です。"
   descriptionEn="License and download terms for the 3D model archive."
+  image={previewImage}
+  imageAlt="Xenoah 3D Models preview"
   jsonLd={termsJsonLd}
 >
   <a class="ghost-button" href={`${base}/`} data-lang-ja="モデル一覧へ戻る" data-lang-en="Back to models">モデル一覧へ戻る</a>
