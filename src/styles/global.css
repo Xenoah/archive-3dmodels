@@ -107,6 +107,12 @@ select {
   text-decoration: none;
 }
 
+.brand-logo {
+  width: min(320px, 52vw);
+  height: auto;
+  margin-bottom: 4px;
+}
+
 .brand strong {
   font-size: 1.05rem;
   letter-spacing: 0;
@@ -1056,6 +1062,10 @@ select {
     align-items: flex-start;
     flex-direction: column;
     padding: 12px 0;
+  }
+
+  .brand-logo {
+    width: min(280px, calc(100vw - 32px));
   }
 
   .toolbar,

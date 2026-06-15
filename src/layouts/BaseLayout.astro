@@ -1,5 +1,6 @@
 ---
 import "../styles/global.css";
+import logoUrl from "../assets/xenoah-3d-models-archive-logo.png?url";
 
 const {
   title = "3Dモデル",
@@ -98,10 +99,12 @@ function imageMimeType(url) {
       <header class="site-header">
         <nav class="nav" aria-label="Global">
           <a class="brand" href={`${base}/`}>
+            <img class="brand-logo" src={logoUrl} alt="Xenoah 3D Models Archive" width="2172" height="724" />
             <strong>Xenoah 3D Models</strong>
             <span data-lang-ja="Xenoah による静的配布アーカイブ" data-lang-en="Static distribution archive by Xenoah">Xenoah による静的配布アーカイブ</span>
           </a>
           <div class="nav-links">
+            <a href="https://xenoah.github.io/" data-lang-ja="ホームページ" data-lang-en="Homepage">ホームページ</a>
             <a href={`${base}/`} data-lang-ja="モデル" data-lang-en="Models">モデル</a>
             <a href={`${base}/terms/`} data-lang-ja="規約" data-lang-en="Terms">規約</a>
             <a href={`${base}/rss.xml`}>RSS</a>
