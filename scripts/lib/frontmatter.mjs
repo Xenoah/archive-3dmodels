@@ -21,20 +21,12 @@ function parseScalar(raw) {
 
 export function parseFrontmatter(input) {
   const text = input.replace(/^\uFEFF/, "");
-  if (!text.startsWith("---\n") && !text.startsWith("---\r\n")) {
-    return { data: {}, body: text };
-  }
+  const frontmatter = extractFrontmatter(text);
+  if (!frontmatter) return { data: {}, body: text };
 
-  const end = text.indexOf("\n---", 4);
-  if (end === -1) {
-    return { data: {}, body: text };
-  }
-
-  const yaml = text.slice(4, end).replace(/\r\n/g, "\n");
-  const restStart = text.indexOf("\n", end + 4);
-  const body = restStart === -1 ? "" : text.slice(restStart + 1);
+  const { yaml, body } = frontmatter;
   const data = {};
-  const lines = yaml.split("\n");
+  const lines = yaml.includes("\n") ? yaml.split("\n") : splitInlineYaml(yaml);
 
   for (let i = 0; i < lines.length; i += 1) {
     const line = lines[i];
@@ -57,6 +49,63 @@ export function parseFrontmatter(input) {
   }
 
   return { data, body };
+}
+
+function extractFrontmatter(text) {
+  if (text.startsWith("---\n") || text.startsWith("---\r\n")) {
+    const end = text.indexOf("\n---", 4);
+    if (end === -1) return null;
+
+    const yaml = text.slice(4, end).replace(/\r\n/g, "\n");
+    const restStart = text.indexOf("\n", end + 4);
+    const body = restStart === -1 ? "" : text.slice(restStart + 1);
+    return { yaml, body };
+  }
+
+  const inline = /^---[ \t]+([\s\S]*?)[ \t]+---(?:\r?\n|$)/.exec(text);
+  if (!inline) return null;
+
+  return {
+    yaml: inline[1].trim(),
+    body: text.slice(inline[0].length)
+  };
+}
+
+function splitInlineYaml(yaml) {
+  const keyRanges = [];
+  let inQuote = "";
+  let escaped = false;
+
+  for (let i = 0; i < yaml.length; i += 1) {
+    const char = yaml[i];
+    if (escaped) {
+      escaped = false;
+      continue;
+    }
+    if (char === "\\" && inQuote === '"') {
+      escaped = true;
+      continue;
+    }
+    if (inQuote) {
+      if (char === inQuote) inQuote = "";
+      continue;
+    }
+    if (char === '"' || char === "'") {
+      inQuote = char;
+      continue;
+    }
+
+    const before = i === 0 || /\s/.test(yaml[i - 1]);
+    if (!before) continue;
+
+    const match = /^[A-Za-z0-9_]+:(?=\s|$)/.exec(yaml.slice(i));
+    if (match) keyRanges.push({ start: i, keyEnd: i + match[0].length });
+  }
+
+  return keyRanges.map((range, index) => {
+    const next = keyRanges[index + 1]?.start ?? yaml.length;
+    return `${yaml.slice(range.start, range.keyEnd)} ${yaml.slice(range.keyEnd, next).trim()}`.trimEnd();
+  });
 }
 
 function stringifyScalar(value) {
