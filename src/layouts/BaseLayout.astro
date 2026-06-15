@@ -59,8 +59,6 @@ const jsonLdItems = [defaultJsonLd, ...(Array.isArray(jsonLd) ? jsonLd : [jsonLd
       const savedTheme = localStorage.getItem("archive-3dmodels-theme");
       const prefersDark = window.matchMedia?.("(prefers-color-scheme: dark)").matches;
       document.documentElement.dataset.theme = savedTheme || (prefersDark ? "dark" : "light");
-      const savedViewer = localStorage.getItem("archive-3dmodels-viewer");
-      document.documentElement.dataset.viewerEnabled = savedViewer === "off" ? "false" : "true";
     </script>
     <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-PHNBTBWCDK"></script>
@@ -95,16 +93,6 @@ const jsonLdItems = [defaultJsonLd, ...(Array.isArray(jsonLd) ? jsonLd : [jsonLd
             <button
               type="button"
               class="viewer-switch"
-              data-viewer-switch
-              aria-pressed="true"
-              data-lang-ja="3D ON"
-              data-lang-en="3D ON"
-            >
-              3D ON
-            </button>
-            <button
-              type="button"
-              class="viewer-switch"
               data-theme-switch
               aria-pressed="false"
               data-lang-ja="DARK"
@@ -135,7 +123,6 @@ const jsonLdItems = [defaultJsonLd, ...(Array.isArray(jsonLd) ? jsonLd : [jsonLd
     </div>
     <script define:vars={{ title, titleEn, description, descriptionEn }}>
       const languageKey = "archive-3dmodels-language";
-      const viewerKey = "archive-3dmodels-viewer";
       const themeKey = "archive-3dmodels-theme";
       const supportedLanguages = new Set(["ja", "en"]);
 
@@ -186,25 +173,6 @@ const jsonLdItems = [defaultJsonLd, ...(Array.isArray(jsonLd) ? jsonLd : [jsonLd
         button.addEventListener("click", () => applyLanguage(button.dataset.langSwitch));
       });
 
-      function applyViewerPreference(enabled) {
-        const isEnabled = enabled !== false;
-        document.documentElement.dataset.viewerEnabled = isEnabled ? "true" : "false";
-        localStorage.setItem(viewerKey, isEnabled ? "on" : "off");
-        document.querySelectorAll("[data-viewer-switch]").forEach((button) => {
-          button.setAttribute("aria-pressed", isEnabled ? "true" : "false");
-          button.dataset.langJa = isEnabled ? "3D ON" : "3D OFF";
-          button.dataset.langEn = isEnabled ? "3D ON" : "3D OFF";
-          button.textContent = isEnabled ? "3D ON" : "3D OFF";
-        });
-        window.dispatchEvent(new CustomEvent("archive-viewer-preference-change", { detail: { enabled: isEnabled } }));
-      }
-
-      document.querySelectorAll("[data-viewer-switch]").forEach((button) => {
-        button.addEventListener("click", () => {
-          applyViewerPreference(document.documentElement.dataset.viewerEnabled === "false");
-        });
-      });
-
       function applyTheme(theme) {
         const nextTheme = theme === "dark" ? "dark" : "light";
         document.documentElement.dataset.theme = nextTheme;
@@ -228,16 +196,11 @@ const jsonLdItems = [defaultJsonLd, ...(Array.isArray(jsonLd) ? jsonLd : [jsonLd
         get: () => document.documentElement.dataset.lang || "ja",
         apply: applyLanguage
       };
-      window.archiveViewerPreference = {
-        get: () => document.documentElement.dataset.viewerEnabled !== "false",
-        apply: applyViewerPreference
-      };
       window.archiveTheme = {
         get: () => document.documentElement.dataset.theme || "light",
         apply: applyTheme
       };
 
-      applyViewerPreference(localStorage.getItem(viewerKey) !== "off");
       applyTheme(localStorage.getItem(themeKey) || document.documentElement.dataset.theme || "light");
       applyLanguage(getSavedLanguage());
     </script>

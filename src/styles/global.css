@@ -497,18 +497,6 @@ select {
   height: 100%;
 }
 
-.viewer-off-fallback {
-  display: none;
-}
-
-html[data-viewer-enabled="false"] .viewer-thumb {
-  display: none;
-}
-
-html[data-viewer-enabled="false"] .viewer-off-fallback {
-  display: grid;
-}
-
 .thumb .model-viewer-3d canvas {
   min-height: 0;
   cursor: pointer;

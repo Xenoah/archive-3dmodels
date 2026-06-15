@@ -335,8 +335,8 @@ export async function collectModels(report, options = {}) {
   }
 
   return models.sort((a, b) => {
-    const left = a.updatedAt || a.updated || "";
-    const right = b.updatedAt || b.updated || "";
+    const left = a.uploadedAt || a.uploaded || "";
+    const right = b.uploadedAt || b.uploaded || "";
     if (left !== right) return right.localeCompare(left);
     return a.title.localeCompare(b.title);
   });

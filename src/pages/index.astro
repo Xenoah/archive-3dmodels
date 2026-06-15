@@ -133,7 +133,6 @@ const collectionJsonLd = {
       <select id="match-mode" aria-label="検索方式" data-lang-aria-label-ja="検索方式" data-lang-aria-label-en="Search mode">
         <option value="partial" data-lang-ja="部分一致" data-lang-en="Partial">部分一致</option>
         <option value="exact" data-lang-ja="完全一致" data-lang-en="Exact">完全一致</option>
-        <option value="fuzzy" data-lang-ja="あいまい検索" data-lang-en="Fuzzy">あいまい検索</option>
       </select>
       <select id="category" aria-label="カテゴリ" data-lang-aria-label-ja="カテゴリ" data-lang-aria-label-en="Category">
         <option value="" data-lang-ja="すべてのカテゴリ" data-lang-en="All categories">すべてのカテゴリ</option>
@@ -148,7 +147,7 @@ const collectionJsonLd = {
         {licenses.map((license) => <option value={license}>{license}</option>)}
       </select>
       <select id="sort" aria-label="並び順" data-lang-aria-label-ja="並び順" data-lang-aria-label-en="Sort order">
-        <option value="updated-desc" data-lang-ja="更新が新しい順" data-lang-en="Newest first">更新が新しい順</option>
+        <option value="uploaded-desc" data-lang-ja="追加日が新しい順" data-lang-en="Added newest">追加日が新しい順</option>
         <option value="created-desc" data-lang-ja="作成が新しい順" data-lang-en="Created newest">作成が新しい順</option>
         <option value="title-asc" data-lang-ja="名前 A-Z" data-lang-en="Name A-Z">名前 A-Z</option>
         <option value="category-asc" data-lang-ja="カテゴリ" data-lang-en="Category">カテゴリ</option>
@@ -201,6 +200,7 @@ const collectionJsonLd = {
                 data-category={model.category}
                 data-tags={(model.tags ?? []).join("|")}
                 data-license={model.license}
+                data-uploaded={model.uploadedAt || model.uploaded || ""}
                 data-updated={model.updatedAt || model.updated || ""}
                 data-created={model.createdAt || model.created || ""}
               >
@@ -218,14 +218,6 @@ const collectionJsonLd = {
                             variant="thumbnail"
                             autoload={false}
                           />
-                        </div>
-                        <div class="model-fallback viewer-off-fallback" aria-hidden="true">
-                          <div class="cube-mark">
-                            <span></span>
-                            <span></span>
-                            <span></span>
-                          </div>
-                          <strong>3D</strong>
                         </div>
                       </>
                     ) : (
@@ -307,34 +299,6 @@ const collectionJsonLd = {
         .toLocaleLowerCase("ja-JP")
         .trim();
 
-    function boundedDistance(a, b, maxDistance) {
-      if (Math.abs(a.length - b.length) > maxDistance) return maxDistance + 1;
-      let previous = Array.from({ length: b.length + 1 }, (_, index) => index);
-      for (let i = 1; i <= a.length; i++) {
-        const current = [i];
-        let rowMin = current[0];
-        for (let j = 1; j <= b.length; j++) {
-          const cost = a[i - 1] === b[j - 1] ? 0 : 1;
-          const next = Math.min(previous[j] + 1, current[j - 1] + 1, previous[j - 1] + cost);
-          current[j] = next;
-          rowMin = Math.min(rowMin, next);
-        }
-        if (rowMin > maxDistance) return maxDistance + 1;
-        previous = current;
-      }
-      return previous[b.length];
-    }
-
-    function isSubsequence(needle, haystack) {
-      let offset = 0;
-      for (const char of needle) {
-        offset = haystack.indexOf(char, offset);
-        if (offset === -1) return false;
-        offset++;
-      }
-      return true;
-    }
-
     function matchesQuery(card, query, mode) {
       if (!query) return true;
       const fields = [
@@ -349,14 +313,7 @@ const collectionJsonLd = {
       const tokens = haystack.split(/[\s,;#/]+/).filter(Boolean);
 
       if (mode === "exact") return fields.some((field) => field === query) || tokens.includes(query);
-      if (mode === "partial") return haystack.includes(query);
-
-      const maxDistance = Math.max(1, Math.floor(query.length * 0.25));
-      return (
-        haystack.includes(query) ||
-        isSubsequence(query, haystack) ||
-        tokens.some((token) => boundedDistance(query, token, maxDistance) <= maxDistance)
-      );
+      return haystack.includes(query);
     }
 
     function compareCards(a, b) {
@@ -368,7 +325,7 @@ const collectionJsonLd = {
         return `${normalize(a.dataset.category)} ${titleA}`.localeCompare(`${normalize(b.dataset.category)} ${titleB}`, "ja");
       }
       if (sort === "created-desc") return (b.dataset.created || "").localeCompare(a.dataset.created || "") || titleA.localeCompare(titleB, "ja");
-      return (b.dataset.updated || "").localeCompare(a.dataset.updated || "") || titleA.localeCompare(titleB, "ja");
+      return (b.dataset.uploaded || "").localeCompare(a.dataset.uploaded || "") || titleA.localeCompare(titleB, "ja");
     }
 
     function visibleCards() {
@@ -392,7 +349,6 @@ const collectionJsonLd = {
     }
 
     function startVisibleViewers(items) {
-      if (document.documentElement.dataset.viewerEnabled === "false") return;
       for (const card of items) {
         const viewer = card.querySelector(".model-viewer-3d");
         if (!viewer || viewer.dataset.loaded === "true") continue;
@@ -487,7 +443,6 @@ const collectionJsonLd = {
         render();
       });
     }
-    window.addEventListener("archive-viewer-preference-change", render);
     render();
   </script>
 </BaseLayout>
