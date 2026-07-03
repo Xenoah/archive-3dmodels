@@ -23,6 +23,6 @@
   "dependencies": {
     "astro": "^5.9.2",
     "occt-import-js": "^0.0.23",
-    "three": "^0.184.0"
+    "three": "^0.185.1"
   }
 }
